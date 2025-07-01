@@ -1,0 +1,12 @@
+# Development overrides for docker-compose
+# This file is automatically loaded by docker-compose
+# Use it for local development settings
+
+services:
+  f1-dash-server:
+    environment:
+      - LOG_LEVEL=debug
+    # Run in development mode with simulation
+    command: ["--development", "--simulate=/app/scripts/Austria Sprint Race Data 2023.txt"]
+    # Uncomment to enable persistence with TimescaleDB
+    # command: ["--development", "--persistence", "--simulate=/app/scripts/Austria Sprint Race Data 2023.txt"]

@@ -1,0 +1,37 @@
+# Build artifacts
+.build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+.swiftpm/
+
+# Docker files
+Dockerfile
+docker-compose.yaml
+.dockerignore
+
+# Git
+.git/
+.gitignore
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+README.md
+docs/
+
+# Tests (optional - include if you want to run tests in container)
+# Tests/
+
+# App builds
+F1-Dash.app/
+F1-Dash.app.backup/
+
+# Other
+*.log
+.env

@@ -1,0 +1,32 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=password
+
+  f1-dash-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.linux
+    container_name: f1-dash-server
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=info
+      - HOST=0.0.0.0
+      - PORT=8080
+    volumes:
+      # Mount simulation data if needed
+      - ./scripts:/app/scripts:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - timescaledb

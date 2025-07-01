@@ -1,0 +1,71 @@
+# Build stage
+FROM swift:6.1.2-jammy AS builder
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy entire project
+COPY . .
+
+# Remove SwiftyJSON files that cause compilation issues on Linux
+RUN find Sources -name "*SwiftyJSON*.swift" -delete
+
+# Remove SwiftyJSON dependency from Package.swift for Linux build
+RUN sed -i '/.package(url: "https:\/\/github.com\/SwiftyJSON\/SwiftyJSON"/d' Package.swift && \
+    sed -i '/.product(name: "SwiftyJSON", package: "SwiftyJSON")/d' Package.swift
+
+# Build only the server executable, skip tests
+RUN swift build -c release --product F1DashServer
+
+# Runtime stage
+FROM ubuntu:24.04
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    libcurl4 \
+    libxml2 \
+    libc6 \
+    libstdc++6 \
+    libatomic1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1001 -s /bin/bash f1dash
+
+# Set working directory
+WORKDIR /app
+
+# Copy built executable from builder
+COPY --from=builder /app/.build/release/F1DashServer /app/F1DashServer
+
+# Copy Swift runtime libraries
+COPY --from=builder /usr/lib/swift/linux/*.so* /usr/lib/
+
+# Copy simulation data if needed
+COPY --from=builder /app/scripts /app/scripts
+
+# Change ownership
+RUN chown -R f1dash:f1dash /app
+
+# Switch to non-root user
+USER f1dash
+
+# Expose port
+EXPOSE 8080
+
+# Set environment variables
+ENV LOG_LEVEL=info
+ENV HOST=0.0.0.0
+ENV PORT=8080
+
+# Run the server
+ENTRYPOINT ["/app/F1DashServer"]
+CMD ["--host", "0.0.0.0", "--port", "8080"]
