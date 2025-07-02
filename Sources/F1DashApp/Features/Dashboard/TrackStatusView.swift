@@ -45,7 +45,7 @@ struct TrackStatusView: View {
     
     private var backgroundForStatus: Color {
         guard let status = trackStatus?.status else {
-            return Color(nsColor: .controlBackgroundColor)
+            return Color.platformBackground
         }
         
         // Use the color from TrackFlag with opacity
@@ -113,7 +113,7 @@ struct FlagIndicator: View {
                 Spacer()
             }
             .padding()
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(Color.gray.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }

@@ -7,9 +7,72 @@
 
 import SwiftUI
 import F1DashModels
+import AVFoundation
+import Observation
+
+@MainActor
+@Observable
+class AudioPlayerManager {
+    private var player: AVPlayer?
+    var currentlyPlayingURL: URL?
+    var isPlaying: Bool = false
+    
+    func playAudio(from url: URL) {
+        if currentlyPlayingURL == url && isPlaying {
+            // Already playing this audio, so pause it
+            pause()
+            return
+        }
+        
+        // Stop any currently playing audio
+        stop()
+        
+        // Create and configure the player
+        let playerItem = AVPlayerItem(url: url)
+        player = AVPlayer(playerItem: playerItem)
+        currentlyPlayingURL = url
+        isPlaying = true
+        
+        // Observe when playback ends
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: playerItem,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.stop()
+            }
+        }
+        
+        player?.play()
+    }
+    
+    func pause() {
+        player?.pause()
+        isPlaying = false
+    }
+    
+    func stop() {
+        player?.pause()
+        player = nil
+        currentlyPlayingURL = nil
+        isPlaying = false
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private nonisolated func cleanupPlayer() {
+        // Non-MainActor cleanup for deinit
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    deinit {
+        cleanupPlayer()
+    }
+}
 
 struct TeamRadioView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
+    @State private var audioPlayer = AudioPlayerManager()
     
     private var teamRadio: TeamRadio? {
         appEnvironment.liveSessionState.teamRadio
@@ -24,7 +87,7 @@ struct TeamRadioView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(captures.sorted(by: { $0.utc > $1.utc }).prefix(20), id: \.utc) { capture in
-                            TeamRadioRow(capture: capture)
+                            TeamRadioRow(capture: capture, audioPlayer: audioPlayer)
                         }
                     }
                 }
@@ -39,7 +102,7 @@ struct TeamRadioView: View {
             }
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -47,6 +110,7 @@ struct TeamRadioView: View {
 struct TeamRadioRow: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     let capture: RadioCapture
+    let audioPlayer: AudioPlayerManager
     
     private var driver: Driver? {
         appEnvironment.liveSessionState.driver(for: capture.racingNumber)
@@ -91,21 +155,24 @@ struct TeamRadioRow: View {
                     
                     Spacer()
                     
-                    // Play button (placeholder)
+                    // Play button
                     Button {
-                        // TODO: Implement audio playback
+                        if let audioURL = capture.audioURL {
+                            audioPlayer.playAudio(from: audioURL)
+                        }
                     } label: {
-                        Image(systemName: "play.circle.fill")
+                        let isCurrentlyPlaying = audioPlayer.currentlyPlayingURL == capture.audioURL && audioPlayer.isPlaying
+                        Image(systemName: isCurrentlyPlaying ? "pause.circle.fill" : "play.circle.fill")
                             .font(.body)
+                            .foregroundStyle(isCurrentlyPlaying ? .orange : .blue)
                     }
                     .buttonStyle(.plain)
-                    .disabled(true) // For now
                 }
             }
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        .background(Color.platformBackground.opacity(0.5))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
     
@@ -163,7 +230,7 @@ struct CompactTeamRadioView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(Color.platformBackground)
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }

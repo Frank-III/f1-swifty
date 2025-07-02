@@ -2,44 +2,60 @@
 //  F1DashApp.swift
 //  F1-Dash
 //
-//  Main app entry point for macOS
+//  Main app entry point for all platforms
 //
 
 import SwiftUI
+#if canImport(AppKit)
 import AppKit
+#endif
 
 @main
 struct F1DashApp: App {
+    #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
     @State private var appEnvironment = AppEnvironment()
     
     var body: some Scene {
-        // Settings window
-        Settings {
-            SettingsView()
+        #if os(macOS)
+        // macOS-specific scenes
+        Group {
+            // Settings window
+            Settings {
+                SettingsView()
+                    .environment(appEnvironment)
+            }
+            
+            // Main window scene (hidden by default)
+            WindowGroup("F1 Dash") {
+                DashboardView()
+                    .environment(appEnvironment)
+            }
+            .windowStyle(.hiddenTitleBar)
+            .windowResizability(.contentSize)
+            .defaultSize(width: 400, height: 600)
+            
+            // Menu bar extra
+            MenuBarExtra("F1 Dash", systemImage: "flag.checkered.circle.fill") {
+                PopoverDashboardView()
+                    .environment(appEnvironment)
+            }
+            .menuBarExtraStyle(.window)
+        }
+        #else
+        // iOS/iPadOS main window
+        WindowGroup {
+            MainTabView()
                 .environment(appEnvironment)
         }
-        
-        // Main window scene (hidden by default)
-        WindowGroup("F1 Dash") {
-            DashboardView()
-                .environment(appEnvironment)
-        }
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 400, height: 600)
-        
-        // Menu bar extra
-        MenuBarExtra("F1 Dash", systemImage: "flag.checkered.circle.fill") {
-            PopoverDashboardView()
-                .environment(appEnvironment)
-        }
-        .menuBarExtraStyle(.window)
+        #endif
     }
 }
 
-// MARK: - App Delegate
+// MARK: - App Delegate (macOS only)
 
+#if os(macOS)
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -47,7 +63,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide dock icon for menu bar app
-        NSApp.setActivationPolicy(.accessory)
+        // NOTE: Commented out for debugging - uncomment for release
+        // NSApp.setActivationPolicy(.accessory)
         
         // Auto-connect on launch
         Task { @MainActor in
@@ -87,9 +104,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 }
+#endif
 
-// MARK: - Menu Commands
+// MARK: - Menu Commands (macOS only)
 
+#if os(macOS)
 extension F1DashApp {
     var commands: some Commands {
         Group {
@@ -145,3 +164,4 @@ extension F1DashApp {
         window.makeKeyAndOrderFront(nil)
     }
 }
+#endif

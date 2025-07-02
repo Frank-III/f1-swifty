@@ -23,7 +23,7 @@ struct DriverListView: View {
                 }
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
     }
 }
 
@@ -34,6 +34,10 @@ struct DriverRowView: View {
     
     private var timing: TimingDataDriver? {
         appEnvironment.liveSessionState.timing(for: driver.racingNumber)
+    }
+    
+    private var stints: [Stint] {
+        appEnvironment.liveSessionState.timingAppData?.lines[driver.racingNumber]?.stints ?? []
     }
     
     private var isFavorite: Bool {
@@ -71,6 +75,12 @@ struct DriverRowView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+            }
+            
+            // Tire information
+            if !stints.isEmpty {
+                TireInfoView(stints: stints)
+                    .frame(maxWidth: 80)
             }
             
             Spacer()

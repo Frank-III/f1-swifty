@@ -20,6 +20,14 @@ struct LapTimeDetailView: View {
         appEnvironment.liveSessionState.timingStats?.lines[driver.racingNumber]
     }
     
+    private var carData: CarDataChannels? {
+        appEnvironment.liveSessionState.carData?.entries.last?.cars[driver.racingNumber]
+    }
+    
+    private var stints: [Stint] {
+        appEnvironment.liveSessionState.timingAppData?.lines[driver.racingNumber]?.stints ?? []
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
@@ -130,10 +138,20 @@ struct LapTimeDetailView: View {
                     }
                 }
             }
+            
+            Divider()
+            
+            // Tire strategy
+            DetailedTireInfoView(stints: stints)
+            
+            Divider()
+            
+            // Car telemetry
+            CarMetricsView(carData: carData)
         }
         .padding()
         .frame(width: 350)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

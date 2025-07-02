@@ -1,4 +1,4 @@
-import Compression
+import SWCompression
 import F1DashModels
 import Foundation
 import Logging
@@ -220,37 +220,20 @@ actor DataProcessingActor {
   }
 
   private func decompressData(_ compressedString: String) async throws -> [String: Any] {
-    // Decode base64
+    // Decode base64-encoded string
     guard let compressedData = Data(base64Encoded: compressedString) else {
-      throw ProcessingError.invalidBase64
+        throw ProcessingError.invalidBase64
     }
 
-    // Decompress using zlib
-    let decompressedData = try compressedData.withUnsafeBytes { bytes in
-      let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024 * 1024)  // 1MB buffer
-      defer { buffer.deallocate() }
-
-      let decompressedSize = compression_decode_buffer(
-        buffer, 1024 * 1024,
-        bytes.bindMemory(to: UInt8.self).baseAddress!, compressedData.count,
-        nil, COMPRESSION_ZLIB
-      )
-
-      guard decompressedSize > 0 else {
-        throw ProcessingError.decompressionFailed
-      }
-
-      return Data(bytes: buffer, count: decompressedSize)
-    }
+    // Decompress using SWCompression (cross-platform)
+    let decompressedData = try ZlibArchive.unarchive(archive: compressedData)
 
     // Parse JSON
-    guard
-      let jsonObject = try JSONSerialization.jsonObject(with: decompressedData) as? [String: Any]
-    else {
-      throw ProcessingError.invalidJSON
+    guard let jsonObject = try JSONSerialization.jsonObject(with: decompressedData) as? [String: Any] else {
+        throw ProcessingError.invalidJSON
     }
 
-    // Transform keys
+    // Transform keys to camelCase
     return DataTransformation.transformKeys(jsonObject)
   }
 }

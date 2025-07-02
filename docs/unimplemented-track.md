@@ -37,88 +37,96 @@ This document provides a starting point for implementing features that are curre
 
 ## 2. Client: Team Radio Audio Playback
 
--   **Status:** ⚠️ Partial
--   **Summary:** The UI for team radio exists, but the audio playback functionality is not implemented.
+-   **Status:** ✅ Completed
+-   **Summary:** Full audio playback functionality implemented using AVFoundation with modern @Observable state management.
 
 ### Document References
 
 -   **`docs/f1-dash-client.md`**:
     -   The `components/dashboard/TeamRadios.tsx` component shows a list of radio messages with play buttons.
 
-### Proposed Implementation in Swift
+### Implementation Details
 
 -   **Location:** `Sources/F1DashApp/Features/Dashboard/TeamRadioView.swift`
--   **Implementation Plan:**
-    1.  **Locate the To-Do:** In `TeamRadioRow`, find the comment `// TODO: Implement audio playback`.
-    2.  **Use AVFoundation:** Import the `AVFoundation` framework.
-    3.  **Implement Playback:** Create an instance of `AVPlayer` within the `TeamRadioRow`. When the play button is tapped, use the `capture.audioURL` property to create an `AVPlayerItem` and play the audio. You will need to manage the player's state to update the UI (e.g., show a pause icon while playing).
+-   **Implementation:**
+    1.  **AudioPlayerManager:** Created an `@Observable` class using modern Swift concurrency patterns.
+    2.  **AVFoundation Integration:** Uses `AVPlayer` for audio playback with proper lifecycle management.
+    3.  **UI State Management:** Play/pause button dynamically updates based on current audio state.
+    4.  **Audio Session Handling:** Proper cleanup and notification observers for audio completion.
 
 ---
 
 ## 3. Client: Live Championship Standings
 
--   **Status:** ❌ Missing
--   **Summary:** A view to display the predicted championship standings during a race is not implemented.
+-   **Status:** ✅ Completed
+-   **Summary:** Full championship standings view implemented with drivers and constructors predictions.
 
 ### Document References
 
 -   **`docs/f1-dash-client.md`**:
     -   The `app/dashboard/standings/page.tsx` file defines the UI for showing live driver and team championship standings, including changes in position and points.
 
-### Proposed Implementation in Swift
+### Implementation Details
 
 -   **Location:**
-    -   Create a new file: `Sources/F1DashApp/Features/Dashboard/StandingsView.swift`.
-    -   Modify `Sources/F1DashApp/Features/Dashboard/DashboardView.swift`.
--   **Implementation Plan:**
-    1.  **Add Tab:** Add a new `case standings = "Standings"` to the `DashboardTab` enum in `DashboardView.swift`.
-    2.  **Create View:** Implement `StandingsView.swift`. This view should use `@Environment(AppEnvironment.self)` to access `appEnvironment.liveSessionState.championshipPrediction`.
-    3.  **Display Data:** If the data is available, iterate through the `drivers` and `teams` dictionaries in the `championshipPrediction` object to display the standings, including current vs. predicted positions and points.
+    -   `Sources/F1DashApp/Features/Dashboard/StandingsView.swift`
+    -   `Sources/F1DashApp/Features/Dashboard/DashboardView.swift`
+-   **Implementation:**
+    1.  **Dashboard Integration:** Added "Standings" tab with trophy icon to the main dashboard.
+    2.  **StandingsView:** Comprehensive view showing both drivers and constructors championships.
+    3.  **Position Tracking:** Displays current vs. predicted positions with visual indicators for changes.
+    4.  **Points Delta:** Color-coded point changes (green for gains, red for losses).
+    5.  **Driver Integration:** Links championship data with driver info including team colors and TLA.
 
 ---
 
 ## 4. Client: Car Metrics (RPM, Throttle, etc.)
 
--   **Status:** ❌ Missing
--   **Summary:** The client does not display detailed, live car telemetry like RPM, speed, throttle, and brake input.
+-   **Status:** ✅ Completed
+-   **Summary:** Comprehensive car telemetry visualization implemented with gauges, bars, and indicators.
 
 ### Document References
 
 -   **`docs/f1-dash-client.md`**:
     -   The `components/driver/DriverPedals.tsx` and `components/driver/DriverCarMetrics.tsx` components are designed to visualize this data.
 
-### Proposed Implementation in Swift
+### Implementation Details
 
 -   **Location:**
-    -   Create a new file: `Sources/F1DashApp/Features/Dashboard/CarMetricsView.swift`.
-    -   Modify `Sources/F1DashApp/State/LiveSessionState.swift` and `LapTimeDetailView.swift`.
--   **Implementation Plan:**
-    1.  **Update State:** Ensure that `CarData` from the `F1State` is being correctly decoded and stored in `LiveSessionState`. The `CarData` model already exists in `F1DashModels`.
-    2.  **Create Component:** Build `CarMetricsView.swift`. This view will take `CarDataChannels` as an input.
-    3.  **Visualize Data:** Inside `CarMetricsView`, use SwiftUI `ProgressView` or custom-drawn shapes to create gauges for RPM, speed, throttle, and brake.
-    4.  **Integrate:** Add the `CarMetricsView` to the `LapTimeDetailView` popover to show live telemetry for the selected driver.
+    -   `Sources/F1DashApp/Features/Dashboard/CarMetricsView.swift`
+    -   `Sources/F1DashApp/Features/Dashboard/LapTimeDetailView.swift`
+-   **Implementation:**
+    1.  **RPM Gauge:** Circular progress indicator with color-coded zones (green/yellow/red based on RPM ranges).
+    2.  **Speed Display:** Digital readout with km/h units in a circular background.
+    3.  **Throttle/Brake Bars:** Vertical bar gauges showing percentage input with appropriate colors.
+    4.  **Gear Indicator:** Digital display supporting forward gears, neutral (N), and reverse (R).
+    5.  **DRS Indicator:** Visual indicator showing DRS activation status.
+    6.  **Integration:** Added to driver detail popover for comprehensive telemetry viewing.
 
 ---
 
 ## 5. Client: Detailed Tire Information
 
--   **Status:** ⚠️ Partial
--   **Summary:** Tire data is modeled but not clearly visualized in the UI.
+-   **Status:** ✅ Completed
+-   **Summary:** Comprehensive tire strategy visualization implemented in both compact and detailed views.
 
 ### Document References
 
 -   **`docs/f1-dash-client.md`**:
     -   The `components/driver/DriverTire.tsx` component shows the current tire compound, its age in laps, and the number of pit stops.
 
-### Proposed Implementation in Swift
+### Implementation Details
 
 -   **Location:**
-    -   Create a new file: `Sources/F1DashApp/Features/Dashboard/TireInfoView.swift`.
-    -   Modify `Sources/F1DashApp/Features/Dashboard/DriverRowView.swift`.
--   **Implementation Plan:**
-    1.  **Create Component:** Build `TireInfoView.swift`. It should accept a `[Stint]` array.
-    2.  **Display Logic:** The view should display the *last* stint from the array. It should show an icon for the `compound` (you can create a helper to map `TireCompound` enum to a system Image or custom asset) and display the `totalLaps`.
-    3.  **Integrate:** Add an instance of `TireInfoView` to the `DriverRowView` to show the current tire for each driver in the main list.
+    -   `Sources/F1DashApp/Features/Dashboard/TireInfoView.swift`
+    -   `Sources/F1DashApp/Features/Dashboard/DriverListView.swift`
+    -   `Sources/F1DashApp/Features/Dashboard/LapTimeDetailView.swift`
+-   **Implementation:**
+    1.  **Compact View:** Shows current tire compound with color-coded circles, lap count, and new tire indicators in driver list.
+    2.  **Stint History:** Displays previous compounds as small colored circles for quick reference.
+    3.  **Detailed View:** Comprehensive stint table in driver detail popover showing all stint information.
+    4.  **Tire Compound Colors:** Accurate F1 tire colors (red/soft, yellow/medium, white/hard, green/intermediate, blue/wet).
+    5.  **Condition Indicators:** Shows "New" and "Current" stint status with appropriate styling.
 
 ---
 

@@ -2,11 +2,13 @@
 //  SettingsView.swift
 //  F1-Dash
 //
-//  Settings window for the macOS app
+//  Settings view for the app
 //
 
 import SwiftUI
+#if os(macOS)
 import ServiceManagement
+#endif
 import F1DashModels
 
 public struct SettingsView: View {
@@ -42,6 +44,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section {
+                #if os(macOS)
                 Toggle("Launch at Login", isOn: Binding(
                     get: { appEnvironment.settingsStore.launchAtLogin },
                     set: { newValue in 
@@ -49,6 +52,7 @@ struct GeneralSettingsView: View {
                         configureLaunchAtLogin(newValue)
                     }
                 ))
+                #endif
                 
                 Toggle("Show Notifications", isOn: Binding(
                     get: { appEnvironment.settingsStore.showNotifications },
@@ -84,6 +88,7 @@ struct GeneralSettingsView: View {
         .padding()
     }
     
+    #if os(macOS)
     private func configureLaunchAtLogin(_ enabled: Bool) {
         do {
             if enabled {
@@ -95,6 +100,7 @@ struct GeneralSettingsView: View {
             print("Failed to configure launch at login: \(error)")
         }
     }
+    #endif
 }
 
 // MARK: - Drivers Settings
@@ -191,7 +197,7 @@ struct DataSettingsView: View {
                             .tag(TimeInterval(option.seconds))
                     }
                 }
-                .pickerStyle(.radioGroup)
+                .pickerStyle(.automatic)
                 
                 HStack {
                     TextField("Custom delay (seconds)", text: $customDelay)

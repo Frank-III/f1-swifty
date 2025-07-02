@@ -103,7 +103,7 @@ struct WeatherView: View {
             }
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

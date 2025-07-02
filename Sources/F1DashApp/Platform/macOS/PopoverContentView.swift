@@ -7,6 +7,9 @@
 
 import SwiftUI
 import F1DashModels
+#if os(macOS)
+import AppKit
+#endif
 
 public struct PopoverContentView: View {
     public init() {}
@@ -25,7 +28,7 @@ public struct PopoverContentView: View {
                     // Track Map
                     TrackMapView()
                         .frame(height: 300)
-                        .background(Color(nsColor: .controlBackgroundColor))
+                        .background(Color.platformBackground)
                     
                     Divider()
                     
@@ -85,11 +88,13 @@ struct HeaderView: View {
             
             // Settings button
             Button {
+                #if os(macOS)
                 if #available(macOS 13, *) {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil as Any?, from: nil as Any?)
                 } else {
-                    NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+                    NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil as Any?, from: nil as Any?)
                 }
+                #endif
             } label: {
                 Image(systemName: "gear")
             }
@@ -128,7 +133,9 @@ struct FooterView: View {
             
             // Quit button
             Button("Quit") {
-                NSApplication.shared.terminate(nil)
+                #if os(macOS)
+                NSApplication.shared.terminate(nil as Any?)
+                #endif
             }
             .buttonStyle(.plain)
             .font(.caption)
@@ -162,7 +169,7 @@ struct ConnectionStatusView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
     }
 }
 

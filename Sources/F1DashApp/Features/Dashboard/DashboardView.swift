@@ -15,6 +15,7 @@ struct DashboardView: View {
     enum DashboardTab: String, CaseIterable {
         case timing = "Timing"
         case session = "Session"
+        case standings = "Standings"
         case weather = "Weather"
         case control = "Race Control"
         case trackMap = "Track Map"
@@ -23,6 +24,7 @@ struct DashboardView: View {
             switch self {
             case .timing: return "stopwatch"
             case .session: return "flag.checkered"
+            case .standings: return "trophy"
             case .weather: return "cloud.sun"
             case .control: return "flag.2.crossed"
             case .trackMap: return "map"
@@ -69,6 +71,9 @@ struct DashboardView: View {
                         }
                     }
                     
+                case .standings:
+                    StandingsView()
+                    
                 case .weather:
                     VStack(spacing: 12) {
                         WeatherView()
@@ -97,7 +102,7 @@ struct DashboardView: View {
             .padding(.bottom)
         }
         .frame(width: 400, height: 600)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Color.platformSecondaryBackground)
     }
 }
 
@@ -122,16 +127,10 @@ struct DashboardHeader: View {
             ConnectionStatusIndicator()
             
             // Settings button
-            Button {
-                NSApp.sendAction(#selector(AppDelegate.openSettings), to: nil, from: nil)
-            } label: {
-                Image(systemName: "gear")
-                    .font(.callout)
-            }
-            .buttonStyle(.plain)
+            settingsButton()
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
     }
 }
 
@@ -150,7 +149,7 @@ struct ConnectionStatusIndicator: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        .background(Color.platformBackground.opacity(0.5))
         .clipShape(Capsule())
     }
 }
@@ -229,7 +228,7 @@ struct PopoverDashboardView: View {
             // Footer buttons
             HStack {
                 Button("Settings") {
-                    NSApp.sendAction(#selector(AppDelegate.openSettings), to: nil, from: nil)
+                    PlatformActions.openSettings()
                 }
                 .buttonStyle(.plain)
                 
@@ -243,7 +242,7 @@ struct PopoverDashboardView: View {
             .padding()
         }
         .frame(width: 350, height: 500)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Color.platformSecondaryBackground)
         .sheet(isPresented: $showFullDashboard) {
             DashboardView()
         }

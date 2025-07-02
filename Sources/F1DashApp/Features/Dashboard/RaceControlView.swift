@@ -39,7 +39,7 @@ struct RaceControlView: View {
             }
         }
         .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -133,7 +133,7 @@ struct CompactRaceControlView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(Color.platformBackground)
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }

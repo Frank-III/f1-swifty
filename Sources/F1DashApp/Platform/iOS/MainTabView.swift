@@ -53,16 +53,6 @@ struct DashboardViewPlaceholder: View {
     }
 }
 
-// MARK: - Standings View
-
-struct StandingsView: View {
-    var body: some View {
-        NavigationStack {
-            Text("Standings - Coming Soon")
-                .navigationTitle("Championship Standings")
-        }
-    }
-}
 
 // MARK: - Weather View Placeholder
 

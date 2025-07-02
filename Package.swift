@@ -53,6 +53,8 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-sharing", from: "1.0.0"),
         // PostgreSQL driver for data persistence
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.26.0"),
+        // ADD: SWCompression for cross-platform zlib decompression
+        .package(url: "https://github.com/tsolomko/SWCompression", from: "4.8.0"),
     ],
     targets: [
         // MARK: - Shared Models Library
@@ -93,6 +95,8 @@ let package = Package(
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                // ADD: SWCompression product
+                .product(name: "SWCompression", package: "SWCompression"),
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),

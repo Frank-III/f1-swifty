@@ -31,6 +31,9 @@ final class SettingsStore {
     @ObservationIgnored
     @Shared(.appStorage("compactMode")) var compactMode = false
     
+    @ObservationIgnored
+    @Shared(.appStorage("showCornerNumbers")) var showCornerNumbers = false
+    
     // MARK: - Computed Properties
     
     var favoriteDriverIDs: Set<String> {
@@ -83,6 +86,7 @@ final class SettingsStore {
         $showNotifications.withLock { $0 = true }
         $trackMapZoom.withLock { $0 = 1.0 }
         $compactMode.withLock { $0 = false }
+        $showCornerNumbers.withLock { $0 = false }
     }
 }
 

@@ -5,7 +5,9 @@
       "Bash(cp:*)",
       "Bash(true)",
       "Bash(swift build:*)",
-      "Bash(docker-compose build:*)"
+      "Bash(docker-compose build:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(swift package:*)"
     ],
     "deny": []
   }

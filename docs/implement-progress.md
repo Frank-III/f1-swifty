@@ -43,15 +43,15 @@ The `F1DashApp` target is a native SwiftUI application for macOS and iOS. It imp
 | | Leaderboard | `components/dashboard/LeaderBoard.tsx` | `DriverListView` | `Sources/F1DashApp/Features/Dashboard/DriverListView.swift` | ✅ Implemented | Shows driver list with position, name, gap, and last lap. |
 | | Track Map | `components/dashboard/Map.tsx` | `TrackMapView` | `Sources/F1DashApp/Features/TrackMap/TrackMapView.swift` | ✅ Implemented | 2D map with live driver positions. |
 | | Race Control | `components/dashboard/RaceControl.tsx` | `RaceControlView` | `Sources/F1DashApp/Features/Dashboard/RaceControlView.swift` | ✅ Implemented | Displays messages from race control. |
-| | Team Radio | `components/dashboard/TeamRadios.tsx` | `TeamRadioView` | `Sources/F1DashApp/Features/Dashboard/TeamRadioView.swift` | ⚠️ Partial | UI is present, but audio playback is not implemented. |
+| | Team Radio | `components/dashboard/TeamRadios.tsx` | `TeamRadioView` | `Sources/F1DashApp/Features/Dashboard/TeamRadioView.swift` | ✅ Implemented | UI and audio playback using AVFoundation with modern @Observable state management. |
 | | Session Info | `components/SessionInfo.tsx` | `SessionInfoView` | `Sources/F1DashApp/Features/Dashboard/SessionInfoView.swift` | ✅ Implemented | Shows meeting, location, and session details. |
 | | Track Status | `components/TrackInfo.tsx` | `TrackStatusView` | `Sources/F1DashApp/Features/Dashboard/TrackStatusView.swift` | ✅ Implemented | Displays current track flag (Green, Yellow, SC, Red). |
 | | Weather Info | `components/WeatherInfo.tsx` | `WeatherView` | `Sources/F1DashApp/Features/Dashboard/WeatherView.swift` | ✅ Implemented | Shows temps, wind, humidity, etc. |
-| | Standings | `app/dashboard/standings/page.tsx` | Not Implemented | N/A | ❌ Missing | Live championship standings prediction view is not implemented. |
+| | Standings | `app/dashboard/standings/page.tsx` | `StandingsView` | `Sources/F1DashApp/Features/Dashboard/StandingsView.swift` | ✅ Implemented | Live championship standings with drivers and constructors predictions, position changes, and point deltas. |
 | | Track Violations | `components/dashboard/TrackViolations.tsx` | Not Implemented | N/A | ❌ Missing | No specific view for track limit violations. |
 | **Driver Details** | Detailed View | `app/dashboard/driver/[nr]/page.tsx` | `LapTimeDetailView` | `Sources/F1DashApp/Features/Dashboard/LapTimeDetailView.swift` | ✅ Implemented | A popover showing detailed lap/sector times. |
-| | Tire Info | `components/driver/DriverTire.tsx` | Not directly visible | `F1DashModels/TimingAppData.swift` | ⚠️ Partial | Tire data (`Stint`) is modeled but not explicitly displayed in a dedicated component like the web version. |
-| | Car Metrics (Pedals, RPM) | `components/driver/DriverPedals.tsx` | Not Implemented | N/A | ❌ Missing | Live car telemetry (throttle, brake, RPM, gear) is not displayed. |
+| | Tire Info | `components/driver/DriverTire.tsx` | `TireInfoView`, `DetailedTireInfoView` | `Sources/F1DashApp/Features/Dashboard/TireInfoView.swift` | ✅ Implemented | Comprehensive tire strategy display with compact driver list view and detailed popover view showing stint history, compounds, and conditions. |
+| | Car Metrics (Pedals, RPM) | `components/driver/DriverPedals.tsx` | `CarMetricsView` | `Sources/F1DashApp/Features/Dashboard/CarMetricsView.swift` | ✅ Implemented | Live car telemetry with RPM gauge, speed display, throttle/brake bars, gear indicator, and DRS status. |
 | **Weather** | Weather Map | `app/dashboard/weather/map.tsx` | Not Implemented | N/A | ❌ Missing | The detailed weather radar map with timeline is not implemented. The track map is for car positions only. |
 | **Settings** | Settings View | `app/dashboard/settings/page.tsx` | `SettingsView` | `Sources/F1DashApp/Features/Settings/SettingsView.swift` | ✅ Implemented | Provides UI for General, Driver, and Data settings. |
 | | Favorite Drivers | `components/settings/FavoriteDrivers.tsx` | `DriversSettingsView` | `Sources/F1DashApp/Features/Settings/SettingsView.swift` | ✅ Implemented | Allows selecting and highlighting favorite drivers. |
@@ -69,8 +69,8 @@ The `F1DashApp` target is a native SwiftUI application for macOS and iOS. It imp
 -   **Gaps:** The most significant missing piece is data persistence. The Rust server's design includes integration with TimescaleDB for storing and later analyzing historical data. This entire `importer`/`analytics` functionality is absent in the Swift version.
 
 **Client (`F1DashApp`)**
--   **Strengths:** The native SwiftUI client provides a robust and feature-rich dashboard experience for macOS, including a unique menu bar popover. It covers most of the critical real-time views: leaderboard, track map, race control, weather, and session status. It also has a comprehensive settings system.
+-   **Strengths:** The native SwiftUI client provides a robust and feature-rich dashboard experience for macOS, including a unique menu bar popover. It covers most of the critical real-time views: leaderboard, track map, race control, weather, session status, championship standings, tire strategy, and car telemetry. It also has a comprehensive settings system and full audio playback for team radio.
 -   **Gaps:**
-    1.  **Deeper Data Visualization:** Features requiring more detailed data visualization, like the weather radar map and live car telemetry (pedals, RPM), are not implemented.
-    2.  **Historical/Static Data:** Views for non-real-time data, such as the full race schedule and live championship standings, are missing.
-    3.  **Tire Data:** While the data models exist, there isn't a clear, dedicated UI component for visualizing stint history and tire compound details for each driver as shown in the web client docs.
+    1.  **Weather Radar Map:** The detailed weather radar map with timeline for rain visualization is not implemented.
+    2.  **Race Schedule:** Views for the full race schedule are missing.
+    3.  **Track Violations:** No specific view for track limit violations.

@@ -16,13 +16,20 @@ final class NotificationManager {
     private let appEnvironment: AppEnvironment
     private var lastTrackStatus: TrackFlag?
     private var lastLeader: String?
+    private var isNotificationAvailable = false
     
     // MARK: - Initialization
     
     init(appEnvironment: AppEnvironment) {
         self.appEnvironment = appEnvironment
-        Task {
-            await requestAuthorization()
+        
+        // Check if we're running in a proper app bundle context
+        if Bundle.main.bundleIdentifier != nil {
+            Task {
+                await requestAuthorization()
+            }
+        } else {
+            print("NotificationManager: Running without app bundle context, notifications disabled")
         }
     }
     
@@ -31,16 +38,19 @@ final class NotificationManager {
     private func requestAuthorization() async {
         do {
             let center = UNUserNotificationCenter.current()
-            try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            isNotificationAvailable = granted
         } catch {
             print("Failed to request notification authorization: \(error)")
+            isNotificationAvailable = false
         }
     }
     
     // MARK: - Notification Handling
     
     func checkForNotifications() {
-        guard appEnvironment.settingsStore.showNotifications else { return }
+        guard isNotificationAvailable,
+              appEnvironment.settingsStore.showNotifications else { return }
         
         checkTrackStatusChange()
         checkLeaderChange()
@@ -134,6 +144,8 @@ final class NotificationManager {
     // MARK: - Send Notification
     
     private func sendNotification(title: String, body: String, identifier: String) {
+        guard isNotificationAvailable else { return }
+        
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

@@ -50,7 +50,7 @@ struct SessionInfoView: View {
                     HStack {
                         Label("Start", systemImage: "clock")
                             .font(.caption2)
-                        Text(formatDate(startDate))
+                        Text(startDate.formatAsTime())
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         
@@ -58,7 +58,7 @@ struct SessionInfoView: View {
                         
                         Label("End", systemImage: "clock.fill")
                             .font(.caption2)
-                        Text(formatDate(endDate))
+                        Text(endDate.formatAsTime())
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -71,24 +71,7 @@ struct SessionInfoView: View {
                 )
             }
         }
-        .padding()
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-    
-    private func formatDate(_ dateString: String) -> String {
-        // Parse ISO8601 date and format for display
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateStyle = .none
-            displayFormatter.timeStyle = .short
-            return displayFormatter.string(from: date)
-        }
-        
-        return dateString
+        .cardStyle()
     }
 }
 
