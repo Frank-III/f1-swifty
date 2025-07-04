@@ -10,11 +10,6 @@ let package = Package(
         .iOS(.v18)
     ],
     products: [
-        // F1DashModels - Shared data models library
-        .library(
-            name: "F1DashModels",
-            targets: ["F1DashModels"]
-        ),
         // F1DashPersistence - Database persistence library
         .library(
             name: "F1DashPersistence",
@@ -30,13 +25,10 @@ let package = Package(
             name: "F1DashSaver",
             targets: ["F1DashSaver"]
         ),
-        // F1DashApp - Client application executable
-        .executable(
-            name: "F1DashApp",
-            targets: ["F1DashApp"]
-        ),
     ],
     dependencies: [
+        // F1DashModels - Local dependency
+        .package(path: "./F1DashModels"),
         // Hummingbird web framework
         .package(url: "https://github.com/hummingbird-project/hummingbird", from: "2.0.0"),
         // Hummingbird WebSocket support
@@ -49,30 +41,17 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.6.1"),
         // Swift Argument Parser for CLI
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
-        // Swift Sharing for client app settings
-        .package(url: "https://github.com/pointfreeco/swift-sharing", from: "1.0.0"),
         // PostgreSQL driver for data persistence
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.26.0"),
         // ADD: SWCompression for cross-platform zlib decompression
         .package(url: "https://github.com/tsolomko/SWCompression", from: "4.8.0"),
     ],
     targets: [
-        // MARK: - Shared Models Library
-        .target(
-            name: "F1DashModels",
-            dependencies: [
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency"),
-                .enableUpcomingFeature("ExistentialAny")
-            ]
-        ),
-        
         // MARK: - Persistence Library
         .target(
             name: "F1DashPersistence",
             dependencies: [
-                "F1DashModels",
+                .product(name: "F1DashModels", package: "F1DashModels"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),
                 .product(name: "Logging", package: "swift-log"),
             ],
@@ -86,7 +65,7 @@ let package = Package(
         .executableTarget(
             name: "F1DashServer",
             dependencies: [
-                "F1DashModels",
+                .product(name: "F1DashModels", package: "F1DashModels"),
                 "F1DashPersistence",
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
@@ -108,7 +87,7 @@ let package = Package(
         .executableTarget(
             name: "F1DashSaver",
             dependencies: [
-                "F1DashModels",
+                .product(name: "F1DashModels", package: "F1DashModels"),
                 .product(name: "SignalRClient", package: "signalr-client-swift"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -121,40 +100,8 @@ let package = Package(
         
         // MARK: - Tests
         .testTarget(
-            name: "F1DashModelsTests",
-            dependencies: ["F1DashModels"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency"),
-                .enableUpcomingFeature("ExistentialAny")
-            ]
-        ),
-        .testTarget(
             name: "F1DashServerTests",
             dependencies: ["F1DashServer"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency"),
-                .enableUpcomingFeature("ExistentialAny")
-            ]
-        ),
-        .testTarget(
-            name: "F1DashAppTests",
-            dependencies: ["F1DashApp"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency"),
-                .enableUpcomingFeature("ExistentialAny")
-            ]
-        ),
-        
-        // MARK: - Client Application
-        .executableTarget(
-            name: "F1DashApp",
-            dependencies: [
-                "F1DashModels",
-                .product(name: "Sharing", package: "swift-sharing"),
-            ],
-            resources: [
-                .process("Resources")
-            ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),
                 .enableUpcomingFeature("ExistentialAny")

@@ -22,8 +22,8 @@ The `F1DashServer` target in Swift largely mirrors the functionality of the Rust
 | **State Management** | `crates/client/consumers.rs` | `SessionStateCache` | `Sources/F1DashServer/Actors/SessionStateCache.swift` | ✅ Implemented | Maintains the canonical `F1State` and handles subscriptions. |
 | **WebSocket Server** | `services/live` | `WebSocketManager`, `ConnectionManager` | `Sources/F1DashServer/Services/WebSocketManager.swift`, `Sources/F1DashServer/Services/ConnectionManager.swift`, `Application+build.swift` | ✅ Implemented | Broadcasts state updates to connected clients via WebSockets. |
 | **REST API** | `services/api` | `APIRouter` | `Sources/F1DashServer/Services/APIRouter.swift` | ✅ Implemented | Provides `/health`, `/schedule`, `/state`, and `/stats` endpoints. |
-| **Data Persistence** | `crates/timescale`, `services/importer` | Not Implemented | N/A | ❌ Missing | The Swift server is in-memory only. There is no database persistence (TimescaleDB) or data importer service. |
-| **Analytics Service** | `services/analytics` | Not Implemented | N/A | ❌ Missing | No analytics endpoints (e.g., for historical lap times/gaps) are implemented. |
+| **Data Persistence** | `crates/timescale`, `services/importer` | `DatabaseManager`, `SessionStateCache` | `Sources/F1DashPersistence/DatabaseManager.swift`, `Sources/F1DashServer/Actors/SessionStateCache.swift` | ✅ Implemented | Connects to a PostgreSQL/TimescaleDB database and persists live timing and tire data when the `--persistence` flag is enabled. |
+| **Analytics Service** | `services/analytics` | `DatabaseManager`, `APIRouter` | `Sources/F1DashPersistence/DatabaseManager.swift`, `Sources/F1DashServer/Services/APIRouter.swift` | ✅ Implemented | Provides `/api/analytics/laptimes/{driver_nr}` and `/api/analytics/gaps/{driver_nr}` endpoints to query historical data from the database. |
 | **Data Recorder** | `crates/saver` | `F1DashSaver` | `Sources/F1DashSaver/F1DashSaver.swift` | ✅ Implemented | A separate command-line utility to record live data, analogous to the Rust `saver` crate. |
 
 ---
@@ -65,8 +65,8 @@ The `F1DashApp` target is a native SwiftUI application for macOS and iOS. It imp
 ### Summary & Areas for Improvement
 
 **Server (`F1DashServer`)**
--   **Strengths:** The Swift server successfully implements the core real-time data pipeline: connecting to the F1 feed, processing data, and broadcasting it to clients via WebSockets. It also includes a simulation mode and a basic REST API.
--   **Gaps:** The most significant missing piece is data persistence. The Rust server's design includes integration with TimescaleDB for storing and later analyzing historical data. This entire `importer`/`analytics` functionality is absent in the Swift version.
+-   **Strengths:** The Swift server successfully implements the core real-time data pipeline: connecting to the F1 feed, processing data, and broadcasting it to clients via WebSockets. It also includes a simulation mode, a basic REST API, and a full data persistence and analytics backend.
+-   **Gaps:** The server implementation is now feature-complete compared to the documented Rust version.
 
 **Client (`F1DashApp`)**
 -   **Strengths:** The native SwiftUI client provides a robust and feature-rich dashboard experience for macOS, including a unique menu bar popover. It covers most of the critical real-time views: leaderboard, track map, race control, weather, session status, championship standings, tire strategy, and car telemetry. It also has a comprehensive settings system and full audio playback for team radio.

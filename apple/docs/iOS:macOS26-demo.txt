@@ -1,0 +1,3136 @@
+Directory Structure:
+
+└── ./
+    └── Landmarks
+        ├── Model
+        │   ├── Activity.swift
+        │   ├── Badge.swift
+        │   ├── BadgeProgress.swift
+        │   ├── Constants.swift
+        │   ├── Elevation.swift
+        │   ├── Landmark.swift
+        │   ├── LandmarkCollection.swift
+        │   ├── LandmarkCollectionData.swift
+        │   ├── LandmarkData.swift
+        │   ├── LocationFinder.swift
+        │   └── ModelData.swift
+        ├── Views
+        │   ├── Badges
+        │   │   └── BadgesView.swift
+        │   ├── Collections
+        │   │   ├── Collection Detail
+        │   │   │   ├── CollectionDetailDisplayView.swift
+        │   │   │   ├── CollectionDetailEditingView.swift
+        │   │   │   └── CollectionDetailView.swift
+        │   │   └── Collections
+        │   │       ├── CollectionListItemView.swift
+        │   │       ├── CollectionsGrid.swift
+        │   │       └── CollectionsView.swift
+        │   ├── Landmarks
+        │   │   ├── Landmark Detail
+        │   │   │   ├── LandmarkCollectionsMenu.swift
+        │   │   │   ├── LandmarkDetailInspectorView.swift
+        │   │   │   ├── LandmarkDetailMapView.swift
+        │   │   │   ├── LandmarkDetailView.swift
+        │   │   │   └── LandmarkFavoriteButton.swift
+        │   │   ├── Landmark Grid
+        │   │   │   ├── LandmarkGridItemView.swift
+        │   │   │   └── LandmarksGrid.swift
+        │   │   ├── Landmark Selection
+        │   │   │   ├── LandmarksSelectionList.swift
+        │   │   │   └── LandmarksSelectionListItem.swift
+        │   │   ├── Landmarks View
+        │   │   │   ├── LandmarkFeaturedItemView.swift
+        │   │   │   ├── LandmarkHorizontalListView.swift
+        │   │   │   ├── LandmarkListItemView.swift
+        │   │   │   ├── LandmarksView.swift
+        │   │   │   └── ReadabilityRoundedRectangle.swift
+        │   │   └── FlexibleHeader.swift
+        │   ├── Landmarks Split View
+        │   │   ├── LandmarksSplitView.swift
+        │   │   └── NavigationOptions.swift
+        │   └── Map
+        │       └── MapView.swift
+        └── LandmarksApp.swift
+
+
+
+---
+File: /Landmarks/Model/Activity.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+An enumeration of activities people complete to earn a badge.
+*/
+
+import Foundation
+
+/// An enumeration of activities people complete to earn a badge.
+enum Activity: String, Identifiable, CaseIterable {
+    case takePhoto
+    case readDescription
+    case findNature
+    case drawSketch
+    
+    var id: String {
+        return self.rawValue
+    }
+
+    var description: LocalizedStringResource {
+        switch self {
+        case .takePhoto:
+            return LocalizedStringResource("Take a photo",
+                                           comment: "Description of an activity that people can select in Activities tab.")
+        case .readDescription:
+            return LocalizedStringResource("Read the landmark description",
+                                           comment: "Description of an activity that people can select in Activities tab.")
+        case .findNature:
+            return LocalizedStringResource("Find a cool piece of nature",
+                                           comment: "Description of an activity that people can select in Activities tab.")
+        case .drawSketch:
+            return LocalizedStringResource("Draw a sketch of this landmark",
+                                           comment: "Description of an activity that people can select in Activities tab.")
+        }
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/Badge.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+An enumeration of badges that people can earn by completing activities at a landmark.
+*/
+
+import SwiftUI
+
+/// An enumeration of badges that people can earn by completing activities at a landmark.
+enum Badge: String, Identifiable, CaseIterable {
+    case greatBarrierReef
+    case niagaraFalls
+    case saharaDesert
+    case mountFuji
+    case amazonRainforest
+    case southShetlandIslands
+    case rockyMountains
+    
+    var id: String {
+        return self.rawValue
+    }
+
+    var badgeName: LocalizedStringResource {
+        switch self {
+        case .greatBarrierReef: .LandmarkData.greatBarrierReefName
+        case .niagaraFalls: .LandmarkData.niagaraFallsName
+        case .saharaDesert: .LandmarkData.saharaDesertName
+        case .mountFuji: .LandmarkData.mountFujiName
+        case .amazonRainforest: .LandmarkData.amazonRainforestName
+        case .southShetlandIslands: .LandmarkData.southShetlandIslandsName
+        case .rockyMountains: .LandmarkData.rockyMountainsName
+        }
+    }
+    
+    var symbolName: String {
+        switch self {
+        case .greatBarrierReef: "fish.fill"
+        case .niagaraFalls: "ferry.fill"
+        case .saharaDesert: "sun.max.fill"
+        case .mountFuji: "mountain.2.fill"
+        case .amazonRainforest: "bird.fill"
+        case .southShetlandIslands: "snowflake"
+        case .rockyMountains: "tree.fill"
+        }
+    }
+    
+    func fontSize(forEarnedView: Bool = false) -> Double {
+        switch self {
+        case .greatBarrierReef: forEarnedView ? 24.0 : 20.0
+        case .niagaraFalls: forEarnedView ? 22.0 : 18.0
+        case .saharaDesert: forEarnedView ? 30.0 : 26.0
+        case .mountFuji: forEarnedView ? 22.0 : 18.0
+        case .amazonRainforest: forEarnedView ? 22.0 : 18.0
+        case .southShetlandIslands: forEarnedView ? 32.0 : 28.0
+        case .rockyMountains: forEarnedView ? 22.0 : 18.0
+        }
+    }
+    
+    var badgeColor: Color {
+        switch self {
+        case .greatBarrierReef: .cyan
+        case .niagaraFalls: .cyan
+        case .saharaDesert: .orange
+        case .mountFuji: .blue
+        case .amazonRainforest: .green
+        case .southShetlandIslands: .blue
+        case .rockyMountains: .mint
+        }
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/BadgeProgress.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A class that tracks progress toward earning a badge.
+*/
+
+import Foundation
+
+/// A class that tracks progress toward earning a badge.
+@MainActor
+@Observable
+class BadgeProgress {
+    private var progress: [Activity: Bool] = [
+        .takePhoto: false,
+        .readDescription: false,
+        .findNature: false,
+        .drawSketch: false
+    ]
+    
+    init(progress: [Activity: Bool]) {
+        self.progress = progress
+    }
+    
+    func isCompleted(_ activity: Activity) -> Bool {
+        progress[activity] ?? false
+    }
+    
+    var activities: [Activity] {
+        return Array(progress.keys)
+    }
+    
+    var earned: Bool {
+        return progress.values.allSatisfy({ $0 == true })
+    }
+    
+    func add(_ activity: Activity) {
+        progress[activity] = true
+    }
+    
+    func remove(_ activity: Activity) {
+        progress[activity] = false
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/Constants.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+Constant values that the app defines.
+*/
+
+import SwiftUI
+
+/// Constant values that the app defines.
+struct Constants {
+    // MARK: App-wide constants
+    
+    static let cornerRadius: CGFloat = 15.0
+    static let leadingContentInset: CGFloat = 26.0
+    static let standardPadding: CGFloat = 14.0
+    static let landmarkImagePadding: CGFloat = 14.0
+    static let safeAreaPadding: CGFloat = 30.0
+    static let titleTopPadding: CGFloat = 8.0
+    static let titleBottomPadding: CGFloat = -4.0
+        
+    // MARK: Collection grid constants
+    
+    static let collectionGridSpacing: CGFloat = 14.0
+    static var collectionGridWidth: CGFloat {
+        return landmarkGridWidth
+    }
+    
+    @MainActor static var collectionGridItemMinSize: CGFloat {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 220.0
+        } else {
+            return 160.0
+        }
+            
+        #else
+        return 220.0
+        #endif
+    }
+    static let collectionGridItemMaxSize: CGFloat = 290.0
+    static let collectionGridItemCornerRadius: CGFloat = 8.0
+    
+    // MARK: Collection detail constants
+    
+    static let textEditorHeight: CGFloat = 88.0
+    static let minimumLandmarkWidth: CGFloat = 120.0
+    static let landmarkGridPadding: CGFloat = 8.0
+    static var landmarkGridWidth: CGFloat {
+        return minimumLandmarkWidth * 4.0 + (5 * landmarkGridPadding)
+    }
+    
+    // MARK: Landmark grid constants
+    
+    static let landmarkGridSpacing: CGFloat = 14.0
+    @MainActor static var landmarkGridItemMinSize: CGFloat {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 240.0
+        } else {
+            return 160.0
+        }
+            
+        #else
+        return 240.0
+        #endif
+    }
+    static let landmarkGridItemMaxSize: CGFloat = 320.0
+    @MainActor static var landmarkGridItemEditingMinSize: CGFloat {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 180.0
+        } else {
+            return 140.0
+        }
+            
+        #else
+        return 180.0
+        #endif
+    }
+    static let landmarkGridItemEditingMaxSize: CGFloat = 240.0
+
+    // MARK: Landmark detail constants
+    
+    static let mapAspectRatio: CGFloat = 1.2
+    
+    // MARK: Landmark featured item constants
+    
+    static let learnMorePadding: CGFloat = 6.0
+    static let learnMoreBottomPadding: CGFloat = 40.0
+    
+    // MARK: Landmark list constants
+    
+    static let landmarkListItemAspectRatio: CGFloat = 1.4
+    static let landmarkListPercentOfHeight: CGFloat = 0.2
+    static let landmarkListMinimumHeight: CGFloat = 140.0
+
+    // MARK: Landmark selection constants
+    
+    static let landmarkSelectionImageSize: CGSize = CGSize(width: 48.0, height: 48.0)
+    static let landmarkSelectionImageCornerRadius: CGFloat = 8.0
+    
+    // MARK: Badge constants
+    static let badgeSize: CGFloat = 52.0
+    static let badgeGlassSpacing: CGFloat = 16.0
+    static let badgeSpacing: CGFloat = 14.0
+    static let badgeButtonTopSpacing: CGFloat = 20.0
+    static let badgeShowHideButtonWidth: CGFloat = 24.0
+    static let badgeShowHideButtonHeight: CGFloat = 32.0
+    static let toggleButtonFontSize: CGFloat = 17.0
+    static let hexagonSize: CGFloat = 48.0
+    static let badgeImagePadding: CGFloat = 12.0
+    static let badgeCornerRadius: CGFloat = 24.0
+    static let badgeFrameWidth: CGFloat = 74.0
+    
+    // MARK: Earned Badge constants
+    static let earnedBadgeSize: CGFloat = 60.0
+    static let earnedHexagonSize: CGFloat = 56.0
+
+    // MARK: Style
+#if os(macOS)
+    static let editingBackgroundStyle = WindowBackgroundShapeStyle.windowBackground
+#else
+    static let editingBackgroundStyle = Material.ultraThickMaterial
+#endif
+}
+
+
+
+---
+File: /Landmarks/Model/Elevation.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+An enumeration of methods to express elevation for a landmark.
+*/
+
+import Foundation
+
+/// An enumeration of methods to express elevation for a landmark.
+enum Elevation {
+    /// A case that captures a fixed elevation measurement, such as "3,000 meters."
+    case fixed(Measurement<UnitLength>)
+    /// A case that captures an open range of elevation up to a high measurement, such as "up to 3,000 meters."
+    case openRange(high: Measurement<UnitLength>)
+    /// A case that captures a closed range of elevation between low and high measurements, such as "between 1,000 and 3,000 meters."
+    case closedRange(low: Measurement<UnitLength>, high: Measurement<UnitLength>)
+    
+    static func formatted(_ elevation: Measurement<UnitLength>) -> String {
+        elevation.formatted(.measurement(width: .abbreviated, usage: .asProvided))
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/Landmark.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A structure that defines the properties of a landmark.
+*/
+
+import CoreLocation
+import CoreTransferable
+import SwiftUI // Image
+import MapKit
+
+/// A structure that defines the properties of a landmark.
+struct Landmark: Hashable, Identifiable, Transferable {
+    var id: Int
+    var name: LocalizedStringResource
+    var continent: String
+    var description: LocalizedStringResource
+    var latitude: Double
+    var longitude: Double
+    var span: Double
+    var placeID: String?
+    var totalArea: Measurement<UnitArea>?
+    var elevation: Elevation?
+    var location: LocalizedStringResource?
+    var badge: Badge?
+    var badgeProgress: BadgeProgress?
+    
+    var backgroundImageName: String {
+        return "\(id)"
+    }
+    
+    var thumbnailImageName: String {
+        return "\(id)-thumb"
+    }
+    
+    var locationCoordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(
+            latitude: latitude,
+            longitude: longitude)
+    }
+
+    var formattedCoordinates: String {
+        String(localized: "\(latitude.formatted())\n\(longitude.formatted())",
+               comment: "The coordinates of a landmark, consisting of the latitude and longitude")
+    }
+
+    var formattedTotalArea: String {
+        guard let totalArea else { return "" }
+        return totalArea.formatted(.measurement(width: .abbreviated, usage: .asProvided))
+    }
+
+    var formattedElevation: String {
+        guard let elevation else { return "" }
+        switch elevation {
+        case .fixed(let elevation):
+            return Elevation.formatted(elevation)
+        case .openRange(let highElevation):
+            return String(localized: "up to \(Elevation.formatted(highElevation))",
+                          comment: "The elevation range of a landmark, where only the upper bound is specified (such as '300 m')")
+        case .closedRange(let lowElevation, let highElevation):
+            return String(localized: "\(lowElevation.value.formatted())–\(Elevation.formatted(highElevation))",
+                          comment: "The elevation range of a landmark, where both bounds are specified (such as '100–300 m')")
+        }
+    }
+
+    var formattedLocation: String {
+        guard let location else { return "" }
+        return String(localized: location)
+    }
+
+    var coordinateRegion: MKCoordinateRegion {
+        MKCoordinateRegion(center: locationCoordinate,
+                           span: .init(latitudeDelta: span, longitudeDelta: span))
+    }
+    
+    static func == (lhs: Landmark, rhs: Landmark) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation {
+            Image($0.thumbnailImageName)
+        }
+    }
+
+    var sharePreview: SharePreview<Never, Image> {
+        SharePreview(name, icon: Image(thumbnailImageName))
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/LandmarkCollection.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A structure that defines a collection of landmarks that a person defines.
+*/
+
+import SwiftUI
+
+/// A structure that defines a collection of landmarks that a person defines.
+@Observable
+class LandmarkCollection: Identifiable {
+    var id: Int
+    var name: String
+    var description: String
+    var landmarkIds: [Int]
+    var landmarks: [Landmark] = []
+    
+    var isFavoritesCollection: Bool {
+        return id == 1001
+    }
+    
+    init(id: Int, name: String, description: String, landmarkIds: [Int], landmarks: [Landmark]) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.landmarkIds = landmarkIds
+        self.landmarks = landmarks
+    }
+}
+
+extension LandmarkCollection: Equatable {
+    static func == (lhs: LandmarkCollection, rhs: LandmarkCollection) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+extension LandmarkCollection: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+extension LandmarkCollection {
+    var backgroundColor: some ShapeStyle {
+        #if os(iOS)
+        return Color(uiColor: .systemGray5)
+        #endif
+        #if os(macOS)
+        return Color(nsColor: .secondarySystemFill)
+        #endif
+    }
+}
+
+extension LandmarkCollection {
+    @ViewBuilder func imageForListItem() -> some View {
+        switch landmarks.count {
+        case 1...3:
+            Image(landmarks[0].thumbnailImageName)
+                .resizable()
+                .aspectRatio(1.0, contentMode: .fit)
+        case 4, 4...:
+            Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+                GridRow {
+                    Image(landmarks[0].thumbnailImageName)
+                        .resizable()
+                        .aspectRatio(1.0, contentMode: .fit)
+                    Image(landmarks[1].thumbnailImageName)
+                        .resizable()
+                        .aspectRatio(1.0, contentMode: .fit)
+                }
+                GridRow {
+                    Image(landmarks[2].thumbnailImageName)
+                        .resizable()
+                        .aspectRatio(1.0, contentMode: .fit)
+                    Image(landmarks[3].thumbnailImageName)
+                        .resizable()
+                        .aspectRatio(1.0, contentMode: .fit)
+                }
+            }
+            .cornerRadius(Constants.collectionGridItemCornerRadius)
+        default:
+            RoundedRectangle(cornerRadius: 8.0)
+                .fill(backgroundColor)
+                .aspectRatio(1.0, contentMode: .fit)
+                .overlay {
+                    GeometryReader { geometry in
+                        Image(systemName: "book.closed")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geometry.size.width / 2, height: geometry.size.height / 2)
+                            .offset(x: geometry.size.width / 4, y: geometry.size.height / 4)
+                            #if os(iOS)
+                            .foregroundColor(Color(uiColor: .systemGray3))
+                            #endif
+                            #if os(macOS)
+                            .foregroundColor(Color(nsColor: .secondaryLabelColor).opacity(0.3))
+                            #endif
+                    }
+                }
+        }
+    }
+}
+
+extension LandmarkCollection {
+    subscript(contains landmark: Landmark) -> Bool {
+        get {
+            landmarks.contains(landmark)
+        }
+        set {
+            if newValue, !landmarks.contains(landmark) {
+                landmarks.append(landmark)
+            } else if !newValue {
+                landmarks.removeAll { $0.id == landmark.id }
+            }
+        }
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/LandmarkCollectionData.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+The app's sample collection data.
+*/
+
+import Foundation
+
+extension LandmarkCollection {
+    /// The app's sample collection data.
+    @MainActor static let exampleData = [
+        LandmarkCollection(
+            id: 1001,
+            name: String(localized: .LandmarkCollectionData.favoritesName),
+            description: "",
+            landmarkIds: [1001, 1021, 1007, 1012],
+            landmarks: []
+        ),
+        
+        LandmarkCollection(
+            id: 1002,
+            name: String(localized: .LandmarkCollectionData.toweringPeaksName),
+            description: String(localized: .LandmarkCollectionData.toweringPeaksDescription),
+            landmarkIds: [1016, 1018, 1007, 1022],
+            landmarks: []
+        ),
+        
+        LandmarkCollection(
+            id: 1003,
+            name: String(localized: .LandmarkCollectionData._2023TripName),
+            description: String(localized: .LandmarkCollectionData._2023TripDescription),
+            landmarkIds: [],
+            landmarks: []
+        ),
+        
+        LandmarkCollection(
+            id: 1004,
+            name: String(localized: .LandmarkCollectionData.sweetDesertsName),
+            description: String(localized: .LandmarkCollectionData.sweetDesertsDescription),
+            landmarkIds: [1006, 1001, 1008],
+            landmarks: []
+        ),
+        
+        LandmarkCollection(
+            id: 1005,
+            name: String(localized: .LandmarkCollectionData.icyWonderlandName),
+            description: String(localized: .LandmarkCollectionData.icyWonderlandDescription),
+            landmarkIds: [],
+            landmarks: []
+        )
+    ]
+}
+
+
+
+---
+File: /Landmarks/Model/LandmarkData.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+The app's sample landmark data.
+*/
+
+import Foundation
+
+extension Landmark {
+    /// The app's sample landmark data.
+    @MainActor static let exampleData = [
+        Landmark(
+            id: 1001,
+            name: .LandmarkData.saharaDesertName,
+            continent: "Africa",
+            description: .LandmarkData.saharaDesertDescription,
+            latitude: 23.900_13,
+            longitude: 10.335_69,
+            span: 40.0,
+            placeID: "IC6C65CA81B4B2772",
+            totalArea: .init(value: 9_200_200, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 300, unit: .meters)),
+            location: .LandmarkData.saharaDesertLocation,
+            badge: .saharaDesert,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: true,
+                .readDescription: true,
+                .findNature: true,
+                .drawSketch: true
+            ])
+        ),
+        
+        Landmark(
+            id: 1002,
+            name: .LandmarkData.serengetiName,
+            continent: "Africa",
+            description: .LandmarkData.serengetiDescription,
+            latitude: -2.454_69,
+            longitude: 34.881_59,
+            span: 10.0,
+            placeID: "IB3A0184A4D301279",
+            totalArea: .init(value: 14_763, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 920, unit: .meters)),
+            location: .LandmarkData.serengetiLocation
+        ),
+        
+        Landmark(
+            id: 1003,
+            name: .LandmarkData.deadvleiName,
+            continent: "Africa",
+            description: .LandmarkData.deadvleiDescription,
+            latitude: -24.7629,
+            longitude: 15.294_29,
+            span: 10.0,
+            placeID: "IBD2966F32E73D261",
+            totalArea: nil,
+            elevation: .fixed(.init(value: 550, unit: .meters)),
+            location: .LandmarkData.deadvleiLocation
+        ),
+        
+        Landmark(
+            id: 1004,
+            name: .LandmarkData.grandCanyonName,
+            continent: "North America",
+            description: .LandmarkData.grandCanyonDescription,
+            latitude: 36.219_04,
+            longitude: -113.160_96,
+            span: 10.0,
+            placeID: "I55488B3D1D9B2D4B",
+            totalArea: nil,
+            elevation: .closedRange(low: .init(value: 800, unit: .meters), high: .init(value: 2000, unit: .meters)),
+            location: .LandmarkData.grandCanyonLocation
+        ),
+        
+        Landmark(
+            id: 1005,
+            name: .LandmarkData.niagaraFallsName,
+            continent: "North America",
+            description: .LandmarkData.niagaraFallsDescription,
+            latitude: 43.077_92,
+            longitude: -79.074_01,
+            span: 4.0,
+            placeID: "I433E22BD30C61C40",
+            totalArea: nil,
+            elevation: .fixed(.init(value: 108, unit: .meters)),
+            location: .LandmarkData.niagaraFallsLocation,
+            badge: .niagaraFalls,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: true,
+                .readDescription: true,
+                .findNature: true,
+                .drawSketch: true
+            ])
+        ),
+        
+        Landmark(
+            id: 1006,
+            name: .LandmarkData.joshuaTreeName,
+            continent: "North America",
+            description: .LandmarkData.joshuaTreeDescription,
+            latitude: 33.887_52,
+            longitude: -115.808_26,
+            span: 10.0,
+            placeID: "I34674B3D3B032AA2",
+            totalArea: .init(value: 3218, unit: .squareKilometers),
+            elevation: .closedRange(low: .init(value: 160, unit: .meters), high: .init(value: 1800, unit: .meters)),
+            location: .LandmarkData.joshuaTreeLocation
+        ),
+        
+        Landmark(
+            id: 1007,
+            name: .LandmarkData.rockyMountainsName,
+            continent: "North America",
+            description: .LandmarkData.rockyMountainsDescription,
+            latitude: 47.625_96,
+            longitude: -112.998_72,
+            span: 16.0,
+            placeID: "IBD757C9B53C92D9E",
+            totalArea: .init(value: 780_000, unit: .squareKilometers),
+            elevation: .openRange(high: .init(value: 4400, unit: .meters)),
+            location: .LandmarkData.rockyMountainsLocation,
+            badge: .rockyMountains,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: false,
+                .readDescription: false,
+                .findNature: false,
+                .drawSketch: false
+            ])
+        ),
+        
+        Landmark(
+            id: 1008,
+            name: .LandmarkData.monumentValleyName,
+            continent: "North America",
+            description: .LandmarkData.monumentValleyDescription,
+            latitude: 36.874,
+            longitude: -110.348,
+            span: 10.0,
+            placeID: "IAB1F0D2360FAAD29",
+            totalArea: .init(value: 370, unit: .squareKilometers),
+            elevation: .closedRange(low: .init(value: 1500, unit: .meters), high: .init(value: 1800, unit: .meters)),
+            location: .LandmarkData.monumentValleyLocation
+        ),
+        
+        Landmark(
+            id: 1009,
+            name: .LandmarkData.muirWoodsName,
+            continent: "North America",
+            description: .LandmarkData.muirWoodsDescription,
+            latitude: 37.8922,
+            longitude: -122.574_82,
+            span: 2.0,
+            placeID: "I907589547EB05261",
+            totalArea: .init(value: 2, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 166, unit: .meters)),
+            location: .LandmarkData.muirWoodsLocation
+        ),
+        
+        Landmark(
+            id: 1010,
+            name: .LandmarkData.amazonRainforestName,
+            continent: "South America",
+            description: .LandmarkData.amazonRainforestDescription,
+            latitude: -3.508_79,
+            longitude: -62.808_02,
+            span: 30.0,
+            placeID: "I76A1045FB9294971",
+            totalArea: .init(value: 6_000_000, unit: .squareKilometers),
+            elevation: .closedRange(low: .init(value: 20, unit: .meters), high: .init(value: 60, unit: .meters)),
+            location: .LandmarkData.amazonRainforestLocation,
+            badge: .amazonRainforest,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: false,
+                .readDescription: false,
+                .findNature: false,
+                .drawSketch: false
+            ])
+        ),
+        
+        Landmark(
+            id: 1011,
+            name: .LandmarkData.lençóisMaranhensesName,
+            continent: "South America",
+            description: .LandmarkData.lençóisMaranhensesDescription,
+            latitude: -2.578_12,
+            longitude: -43.033_45,
+            span: 10.0,
+            placeID: "I292A37DAC754D6A0",
+            totalArea: .init(value: 1550, unit: .squareKilometers),
+            elevation: .closedRange(low: .init(value: 0, unit: .meters), high: .init(value: 40, unit: .meters)),
+            location: .LandmarkData.lençóisMaranhensesLocation
+        ),
+        
+        Landmark(
+            id: 1012,
+            name: .LandmarkData.uyuniSaltFlatName,
+            continent: "South America",
+            description: .LandmarkData.uyuniSaltFlatDescription,
+            latitude: -20.133_78,
+            longitude: -67.489_14,
+            span: 10.0,
+            placeID: "ID903C9A78EB0CAAD",
+            totalArea: .init(value: 10_582, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 3663, unit: .meters)),
+            location: .LandmarkData.uyuniSaltFlatLocation
+        ),
+        
+        Landmark(
+            id: 1014,
+            name: .LandmarkData.whiteCliffsOfDoverName,
+            continent: "Europe",
+            description: .LandmarkData.whiteCliffsOfDoverDescription,
+            latitude: 51.136_41,
+            longitude: 1.363_51,
+            span: 4.0,
+            placeID: "I77B160572D5A2EB1",
+            totalArea: nil,
+            elevation: .closedRange(low: .init(value: 0, unit: .meters), high: .init(value: 110, unit: .meters)),
+            location: .LandmarkData.whiteCliffsOfDoverLocation
+        ),
+        
+        Landmark(
+            id: 1015,
+            name: .LandmarkData.alpsName,
+            continent: "Europe",
+            description: .LandmarkData.alpsDescription,
+            latitude: 46.773_67,
+            longitude: 10.547_73,
+            span: 6.0,
+            placeID: "IE380E71D265F97C0",
+            totalArea: .init(value: 200_000, unit: .squareKilometers),
+            elevation: .openRange(high: .init(value: 4800, unit: .meters)),
+            location: .LandmarkData.alpsLocation
+        ),
+        
+        Landmark(
+            id: 1016,
+            name: .LandmarkData.mountFujiName,
+            continent: "Asia",
+            description: .LandmarkData.mountFujiDescription,
+            latitude: 35.360_72,
+            longitude: 138.727_44,
+            span: 10.0,
+            placeID: "I2CC1DF519EDD7ACD",
+            totalArea: .init(value: 207, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 3776, unit: .meters)),
+            location: .LandmarkData.mountFujiLocation,
+            badge: .mountFuji,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: true,
+                .readDescription: true,
+                .findNature: true,
+                .drawSketch: true
+            ])
+        ),
+        
+        Landmark(
+            id: 1017,
+            name: .LandmarkData.wulingyuanName,
+            continent: "Asia",
+            description: .LandmarkData.wulingyuanDescription,
+            latitude: 29.351_06,
+            longitude: 110.452_42,
+            span: 10.0,
+            placeID: "I818C4BA5FE11BDD6",
+            totalArea: .init(value: 264, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 1050, unit: .meters)),
+            location: .LandmarkData.wulingyuanLocation
+        ),
+        
+        Landmark(
+            id: 1018,
+            name: .LandmarkData.mountEverestName,
+            continent: "Asia",
+            description: .LandmarkData.mountEverestDescription,
+            latitude: 27.988_16,
+            longitude: 86.9251,
+            span: 10.0,
+            placeID: "IE16B9C217B9B0DC1",
+            totalArea: nil,
+            elevation: .fixed(.init(value: 8848, unit: .meters)),
+            location: .LandmarkData.mountEverestLocation
+        ),
+        
+        Landmark(
+            id: 1019,
+            name: .LandmarkData.greatBarrierReefName,
+            continent: "Australia/Oceania",
+            description: .LandmarkData.greatBarrierReefDescription,
+            latitude: -16.7599,
+            longitude: 145.978_42,
+            span: 16.0,
+            placeID: "IF436B51611F3F9D1",
+            totalArea: .init(value: 344_400, unit: .squareKilometers),
+            elevation: nil,
+            location: .LandmarkData.greatBarrierReefLocation,
+            badge: .greatBarrierReef,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: true,
+                .readDescription: true,
+                .findNature: true,
+                .drawSketch: true
+            ])
+        ),
+        
+        Landmark(
+            id: 1020,
+            name: .LandmarkData.yellowstoneNationalParkName,
+            continent: "North America",
+            description: .LandmarkData.yellowstoneNationalParkDescription,
+            latitude: 44.6,
+            longitude: -110.5,
+            span: 4.0,
+            placeID: "ICE88191F5D7094D0",
+            totalArea: .init(value: 8991, unit: .squareKilometers),
+            elevation: .fixed(.init(value: 2470, unit: .meters)),
+            location: .LandmarkData.yellowstoneNationalParkLocation
+        ),
+        
+        Landmark(
+            id: 1021,
+            name: .LandmarkData.southShetlandIslandsName,
+            continent: "Antarctica",
+            description: .LandmarkData.southShetlandIslandsDescription,
+            latitude: -61.794_36,
+            longitude: -58.707_03,
+            span: 20.0,
+            placeID: "I1AAF5FE1DF954A59",
+            totalArea: .init(value: 3687, unit: .squareKilometers),
+            elevation: .closedRange(low: .init(value: 0, unit: .meters), high: .init(value: 2025, unit: .meters)),
+            location: .LandmarkData.southShetlandIslandsLocation,
+            badge: .southShetlandIslands,
+            badgeProgress: BadgeProgress(progress: [
+                .takePhoto: true,
+                .readDescription: true,
+                .findNature: true,
+                .drawSketch: true
+            ])
+        ),
+        
+        Landmark(
+            id: 1022,
+            name: .LandmarkData.kirkjufellMountainName,
+            continent: "Europe",
+            description: .LandmarkData.kirkjufellMountainDescription,
+            latitude: 64.941,
+            longitude: -23.305,
+            span: 2.0,
+            placeID: "I4E9DB8B46491DC5E",
+            totalArea: nil,
+            elevation: .fixed(.init(value: 463, unit: .meters)),
+            location: .LandmarkData.kirkjufellMountainLocation
+        )
+    ]
+}
+
+
+
+---
+File: /Landmarks/Model/LocationFinder.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A class the app uses to find the current location.
+*/
+
+import Foundation
+import CoreLocation
+
+/// A class the app uses to find the current location.
+@Observable
+class LocationFinder: NSObject, CLLocationManagerDelegate {
+    var currentLocation: CLLocation?
+    private let currentLocationManager: CLLocationManager = CLLocationManager()
+
+    override init() {
+        super.init()
+        
+        currentLocationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        currentLocationManager.delegate = self
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch currentLocationManager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            currentLocationManager.requestLocation()
+        case .notDetermined:
+            currentLocationManager.requestWhenInUseAuthorization()
+        default:
+            currentLocationManager.stopUpdatingLocation()
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        print("Found a location.")
+        currentLocation = locations.last
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
+        print("Received an error while trying to find a location: \(error.localizedDescription).")
+        currentLocationManager.stopUpdatingLocation()
+    }
+}
+
+
+
+---
+File: /Landmarks/Model/ModelData.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A class the app uses to store and manage model data.
+*/
+
+import Foundation
+import SwiftUI
+import MapKit
+import CoreLocation
+
+/// A class the app uses to store and manage model data.
+@Observable @MainActor
+class ModelData {
+    var landmarks: [Landmark] = []
+    var landmarksByContinent: [Continent: [Landmark]] = [:]
+    var featuredLandmark: Landmark?
+    var selectedLandmark: Landmark? = nil
+    var isLandmarkInspectorPresented: Bool = false
+    
+    var favoritesCollection: LandmarkCollection!
+    var userCollections: [LandmarkCollection] = []
+
+    var landmarksById: [Int: Landmark] = [:]
+    var mapItemsByLandmarkId: [Int: MKMapItem] = [:]
+    var mapItemsForLandmarks: [MKMapItem] {
+        guard let mapItems = mapItemsByLandmarkId.values.map(\.self) as? [MKMapItem] else {
+            return []
+        }
+        return mapItems
+    }
+    
+    var locationFinder: LocationFinder?
+    
+    var searchString: String = ""
+    var path: NavigationPath = NavigationPath() {
+        didSet {
+            // Check if the person navigates away from a view that's showing the inspector.
+            if path.count < oldValue.count && isLandmarkInspectorPresented == true {
+                // Dismiss the inspector.
+                isLandmarkInspectorPresented = false
+            }
+        }
+    }
+    
+    var earnedBadges: [Badge] {
+        let badges = landmarks.compactMap { landmark in
+            if landmark.badge != nil,
+                let progress = landmark.badgeProgress,
+                progress.earned == true {
+                return landmark.badge
+            }
+            return nil
+        }
+        return badges
+    }
+
+    var windowSize: CGSize = .zero
+
+    init() {
+        loadLandmarks()
+        loadCollections()
+        
+        Task {
+            do {
+                let fetched = try await fetchMapItems(for: landmarks)
+                
+                await MainActor.run {
+                    self.mapItemsByLandmarkId = fetched
+                }
+            } catch {
+                print("Couldn't fetch map items: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func loadLandmarks() {
+        landmarks = Landmark.exampleData
+        landmarksByContinent = landmarksByContinent(from: landmarks)
+        
+        for landmark in landmarks {
+            landmarksById[landmark.id] = landmark
+        }
+
+        if let fujiLandmark = landmarksById[1016] {
+            featuredLandmark = fujiLandmark
+        }
+    }
+    
+    func isFavorite(_ landmark: Landmark) -> Bool {
+        var isFavorite: Bool = false
+        
+        if favoritesCollection.landmarks.firstIndex(of: landmark) != nil {
+            isFavorite = true
+        }
+        
+        return isFavorite
+    }
+
+    func toggleFavorite(_ landmark: Landmark) {
+        if isFavorite(landmark) {
+            removeFavorite(landmark)
+        } else {
+            addFavorite(landmark)
+        }
+    }
+
+    func addFavorite(_ landmark: Landmark) {
+        favoritesCollection.landmarks.append(landmark)
+    }
+
+    func removeFavorite(_ landmark: Landmark) {
+        if let landmarkIndex = favoritesCollection.landmarks.firstIndex(of: landmark) {
+            favoritesCollection.landmarks.remove(at: landmarkIndex)
+        }
+    }
+
+    func loadCollections() {
+        let collectionList: [LandmarkCollection] = LandmarkCollection.exampleData
+
+        for collection in collectionList {
+            let landmarks = landmarks(for: collection.landmarkIds)
+            collection.landmarks = landmarks
+        }
+        
+        guard let favorites = collectionList.first(where: { $0.id == 1001 }) else {
+            fatalError("Favorites collection missing from example data.")
+        }
+        favoritesCollection = favorites
+
+        userCollections = collectionList.filter { collection in
+            return collection.id != 1001
+        }
+    }
+    
+    func addUserCollection() -> LandmarkCollection {
+        var nextUserCollectionId: Int = 1002
+        if let lastUserCollectionId = userCollections.sorted(by: { lhs, rhs in lhs.id > rhs.id }).first?.id {
+            nextUserCollectionId = lastUserCollectionId + 1
+        }
+        
+        let newCollection = LandmarkCollection(id: nextUserCollectionId,
+                                               name: String(localized: "New Collection"),
+                                               description: String(localized: "Add a description for your collection here…"),
+                                               landmarkIds: [],
+                                               landmarks: [])
+        userCollections.append(newCollection)
+        return newCollection
+    }
+
+    func remove(_ collection: LandmarkCollection) {
+        if let indexInUserCollections = userCollections.firstIndex(of: collection) {
+            userCollections.remove(at: indexInUserCollections)
+        }
+    }
+    
+    func collection(_ collection: LandmarkCollection, contains landmark: Landmark) -> Bool {
+        var collectionContainsLandmark: Bool = false
+        
+        if collection.landmarks.firstIndex(of: landmark) != nil {
+            collectionContainsLandmark = true
+        }
+        
+        return collectionContainsLandmark
+    }
+
+    func collectionsContaining(_ landmark: Landmark) -> [LandmarkCollection] {
+        return userCollections.filter { collection in
+            self.collection(collection, contains: landmark)
+        }
+    }
+
+    func add(_ landmark: Landmark, to collection: LandmarkCollection) {
+        if collection.landmarks.firstIndex(of: landmark) != nil {
+            return
+        }
+
+        collection.landmarks.append(landmark)
+    }
+    
+    func remove(_ landmark: Landmark, from collection: LandmarkCollection) {
+        guard let index = collection.landmarks.firstIndex(of: landmark) else {
+            return
+        }
+
+        collection.landmarks.remove(at: index)
+    }
+
+    func landmarks(in continent: Continent) -> [Landmark] {
+        let landmarks = landmarksByContinent[continent] ?? []
+        return landmarks.sorted { String(localized: $0.name) < String(localized: $1.name) }
+    }
+    
+    private func landmarksByContinent(from landmarks: [Landmark]) -> [Continent: [Landmark]] {
+        var landmarksByContinent: [Continent: [Landmark]] = [:]
+        
+        for landmark in landmarks {
+            guard let continent = Continent(rawValue: landmark.continent) else { continue }
+
+            if landmarksByContinent[continent] == nil {
+                landmarksByContinent[continent] = [landmark]
+            } else {
+                landmarksByContinent[continent]?.append(landmark)
+            }
+        }
+
+        return landmarksByContinent
+    }
+    
+    private func landmarks(for landmarkIds: [Int]) -> [Landmark] {
+        var landmarks: [Landmark] = []
+        for landmarkId in landmarkIds {
+            if let landmark = landmarksById[landmarkId] {
+                landmarks.append(landmark)
+            }
+        }
+        return landmarks
+    }
+    
+    nonisolated private func fetchMapItems(for landmarks: [Landmark]) async throws -> [Int: MKMapItem] {
+        var fetchedMapItemsByLandmarkId: [Int: MKMapItem] = [:]
+        
+        for landmark in landmarks {
+            guard let placeID = landmark.placeID else { continue }
+            
+            guard let identifier = MKMapItem.Identifier(rawValue: placeID) else { continue }
+            let request = MKMapItemRequest(mapItemIdentifier: identifier)
+            if let mapItem = try? await request.mapItem {
+                fetchedMapItemsByLandmarkId[landmark.id] = mapItem
+            }
+        }
+        
+        return fetchedMapItemsByLandmarkId
+    }
+}
+
+extension ModelData {
+    enum Continent: String, CaseIterable {
+        case africa = "Africa"
+        case antarctica = "Antarctica"
+        case asia = "Asia"
+        case australiaOceania = "Australia/Oceania"
+        case europe = "Europe"
+        case northAmerica = "North America"
+        case southAmerica = "South America"
+        
+        var name: String {
+            switch self {
+            case .africa: String(localized: "Africa", comment: "The name of a continent.")
+            case .antarctica: String(localized: "Antarctica", comment: "The name of a continent.")
+            case .asia: String(localized: "Asia", comment: "The name of a continent.")
+            case .australiaOceania: String(localized: "Australia/Oceania", comment: "The name of a continent.")
+            case .europe: String(localized: "Europe", comment: "The name of a continent.")
+            case .northAmerica: String(localized: "North America", comment: "The name of a continent.")
+            case .southAmerica: String(localized: "South America", comment: "The name of a continent.")
+            }
+        }
+    }
+    
+    static let orderedContinents: [Continent] = [.asia, .africa, .antarctica, .australiaOceania, .europe, .northAmerica, .southAmerica]
+}
+
+
+
+---
+File: /Landmarks/Views/Badges/BadgesView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view with a toggle button that shows or hides earned badges in a vertical layout.
+*/
+
+import SwiftUI
+
+/// A view with a toggle button that shows or hides earned badges in a vertical layout.
+struct BadgesView: View {
+    @Environment(ModelData.self) private var modelData
+    @State private var isExpanded: Bool = false
+    @Namespace private var namespace
+    
+    var body: some View {
+        // Organizes the badges and toggle button to animate together.
+        GlassEffectContainer(spacing: Constants.badgeGlassSpacing) {
+            VStack(alignment: .center, spacing: Constants.badgeButtonTopSpacing) {
+                if isExpanded {
+                    VStack(spacing: Constants.badgeSpacing) {
+                        ForEach(modelData.earnedBadges) {
+                            BadgeLabel(badge: $0)
+                                // Adds Liquid Glass to the badge.
+                                .glassEffect(.regular, in: .rect(cornerRadius: Constants.badgeCornerRadius))
+                                // Adds an identifier to the badge for animation.
+                                .glassEffectID($0.id, in: namespace)
+                        }
+                    }
+                }
+
+                Button {
+                    // Animates this button and badges when `isExpanded` changes values.
+                    withAnimation {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    ToggleBadgesLabel(isExpanded: isExpanded)
+                        .frame(width: Constants.badgeShowHideButtonWidth,
+                               height: Constants.badgeShowHideButtonHeight)
+                }
+                // Adds Liquid Glass to the button.
+                .buttonStyle(.glass)
+                #if os(macOS)
+                .tint(.clear)
+                #endif
+                // Adds an identifier to the button for animation.
+                .glassEffectID("togglebutton", in: namespace)
+            }
+            .frame(width: Constants.badgeFrameWidth)
+        }
+    }
+}
+
+private struct BadgeLabel: View {
+    var badge: Badge
+    var body: some View {
+        Image(systemName: badge.symbolName)
+            .foregroundStyle(.white)
+            .font(.system(size: badge.fontSize()))
+            .fontWeight(.medium)
+            .frame(width: Constants.badgeSize, height: Constants.badgeSize)
+            .background(content: {
+                Image(systemName: "hexagon.fill")
+                    .foregroundStyle(badge.badgeColor)
+                    .font(.system(size: Constants.hexagonSize))
+                    .frame(width: Constants.badgeSize,
+                           height: Constants.badgeSize)
+            })
+            .padding(Constants.badgeImagePadding)
+            .accessibilityLabel(Text(badge.badgeName))
+    }
+}
+
+private struct ToggleBadgesLabel: View {
+    var isExpanded: Bool
+    var body: some View {
+        Label(isExpanded ? "Hide Badges" : "Show Badges",
+            systemImage: isExpanded ? "xmark" : "hexagon.fill")
+        .foregroundStyle(Color("badgeShowHideColor"))
+        .labelStyle(.iconOnly)
+        .font(.system(size: Constants.toggleButtonFontSize))
+        .fontWeight(.medium)
+        .imageScale(.large)
+    }
+}
+
+#Preview {
+    @Previewable @State var model = ModelData()
+    BadgesView()
+        .environment(model)
+}
+
+/// A view modifier that places ``BadgesView`` over a modified view, in the lower trailing corner.
+private struct ShowsBadgesViewModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        ZStack {
+            content
+            HStack {
+                Spacer()
+                VStack {
+                    Spacer()
+                    BadgesView()
+                        .padding()
+                }
+            }
+        }
+    }
+}
+
+// MARK: - View Extensions
+
+extension View {
+    /// A function that returns a view after it applies `ShowBadgesViewModifier` to it.
+    func showsBadges() -> some View {
+        modifier(ShowsBadgesViewModifier())
+    }
+}
+
+
+
+---
+File: /Landmarks/Views/Collections/Collection Detail/CollectionDetailDisplayView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a collection's title, description, and list of landmarks.
+*/
+
+import SwiftUI
+
+/// A view that shows a collection's title, description, and list of landmarks.
+struct CollectionDetailDisplayView: View {
+    @Bindable var collection: LandmarkCollection
+    
+    var body: some View {
+        VStack() {
+            HStack {
+                Text(collection.name)
+                    .font(.largeTitle)
+                    .fontWeight(.medium)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding([.top])
+                Spacer()
+            }
+            HStack {
+                Text(collection.description)
+                    .font(.title2)
+                    .padding([.top, .bottom])
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            LandmarksGrid(landmarks: $collection.landmarks, forEditing: false)
+        }
+        .padding([.leading, .trailing], Constants.leadingContentInset)
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections.last!
+
+    CollectionDetailDisplayView(collection: previewCollection)
+}
+
+
+
+---
+File: /Landmarks/Views/Collections/Collection Detail/CollectionDetailEditingView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that lets a person edit a collection's title, description, and list of landmarks.
+*/
+
+import SwiftUI
+
+/// A view that lets a person edit a collection's title, description, and list of landmarks.
+struct CollectionDetailEditingView: View {
+    
+    @Bindable var collection: LandmarkCollection
+    @Binding var isShowingLandmarksSelection: Bool
+    @Binding var isShowingDeleteConfirmation: Bool
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Title")
+                Spacer()
+            }
+            .foregroundColor(.secondary)
+            .font(.title2)
+            .fontWeight(.semibold)
+            // Adjust the vertical padding due to the TextEditor.
+            .padding(.bottom, collection.isFavoritesCollection ? 0 : -2)
+            .padding([.top])
+            
+            VStack {
+                if collection.isFavoritesCollection {
+                    HStack {
+                        Text(collection.name)
+                            .font(.largeTitle)
+                        Spacer()
+                    }
+                    .padding()
+                } else {
+                    TextField("Name", text: $collection.name)
+                        .padding()
+                        .textFieldStyle(.plain)
+                }
+            }
+            .background(Constants.editingBackgroundStyle, in: RoundedRectangle(cornerRadius: Constants.cornerRadius))
+            
+            HStack {
+                Text("Description")
+                Spacer()
+            }
+            .foregroundColor(.secondary)
+            .font(.title2)
+            .fontWeight(.semibold)
+            .padding(.bottom, -2) // Adjust the vertical padding due to the TextEditor.
+            .padding([.top])
+            
+            if !collection.isFavoritesCollection {
+                VStack() {
+                    TextEditor(text: $collection.description)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: Constants.textEditorHeight)
+                        .padding()
+                }
+                .background(Constants.editingBackgroundStyle, in: RoundedRectangle(cornerRadius: Constants.cornerRadius))
+            }
+            
+            HStack {
+                Text("Landmarks")
+                Spacer()
+            }
+            .foregroundColor(.secondary)
+            .font(.title2)
+            .fontWeight(.semibold)
+            .padding([.top])
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Select") {
+                        isShowingLandmarksSelection.toggle()
+                    }
+                    .padding([.top, .leading, .trailing])
+                }
+                LandmarksGrid(landmarks: $collection.landmarks, forEditing: true)
+                    .padding([.leading, .trailing, .bottom])
+            }
+            .background(Constants.editingBackgroundStyle, in: RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        }
+        .padding([.leading, .trailing], Constants.leadingContentInset)
+        
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections.last!
+
+    CollectionDetailEditingView(collection: previewCollection,
+                                isShowingLandmarksSelection: .constant(false),
+                                isShowingDeleteConfirmation: .constant(false))
+}
+
+
+
+
+---
+File: /Landmarks/Views/Collections/Collection Detail/CollectionDetailView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a landmark collection's details, with an option to edit.
+*/
+
+import SwiftUI
+
+/// A view that shows a landmark collection's details, with an option to edit.
+struct CollectionDetailView: View {
+    @Environment(ModelData.self) var modelData
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
+
+    @Bindable var collection: LandmarkCollection
+    @State var isEditing: Bool = false
+    @State var isShowingLandmarksSelection: Bool = false
+    @State var isShowingDeleteConfirmation: Bool = false
+    
+    var body: some View {
+        @Bindable var modelData = modelData
+        
+        ScrollView(.vertical) {
+            HStack {
+                if isEditing {
+                    CollectionDetailEditingView(collection: collection,
+                                                isShowingLandmarksSelection: $isShowingLandmarksSelection,
+                                                isShowingDeleteConfirmation: $isShowingDeleteConfirmation)
+                } else {
+                    CollectionDetailDisplayView(collection: collection)
+                }
+            }
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+        }
+        #if os(iOS)
+        .background(Color(uiColor: isEditing && colorScheme == .light ? .systemGray5 : .systemBackground))
+        #endif
+        #if os(macOS)
+        .background(Color(nsColor: isEditing && colorScheme == .light ? .secondarySystemFill : .windowBackgroundColor))
+        #endif
+        .navigationBarBackButtonHidden(isEditing)
+        .toolbar(removing: .title)
+        .sheet(isPresented: $isShowingLandmarksSelection) {
+            LandmarksSelectionList(landmarks: $collection.landmarks)
+                .frame(minWidth: 200.0, minHeight: 400.0)
+        }
+        .toolbar {
+            #if os(macOS)
+            let deleteButtonPlacement: ToolbarItemPlacement = .secondaryAction
+            let editButtonPlacement: ToolbarItemPlacement = .automatic
+            #elseif os(iOS)
+            let deleteButtonPlacement: ToolbarItemPlacement = .topBarLeading
+            let editButtonPlacement: ToolbarItemPlacement = .topBarTrailing
+            #endif
+            if isEditing && !collection.isFavoritesCollection {
+                ToolbarItem(placement: deleteButtonPlacement) {
+                    deleteCollectionToolbarItemButton
+                }
+            }
+            ToolbarItem(placement: editButtonPlacement) {
+                Button() {
+                    withAnimation {
+                        isEditing.toggle()
+                    }
+                } label: {
+                    if isEditing {
+                        Image(systemName: "checkmark")
+                            .transition(.editButtonTransition())
+                    } else {
+                        Text("Edit", comment: "The text label on a button to switch to editor mode.")
+                    }
+                }
+            }
+        }
+    }
+        
+    var deleteCollectionToolbarItemButton: some View {
+        Button(role: .destructive) {
+            isShowingDeleteConfirmation = true
+        } label: {
+            Image(systemName: "trash")
+                .foregroundStyle(.red)
+        }
+        .confirmationDialog("Delete?",
+                            isPresented: $isShowingDeleteConfirmation,
+                            presenting: collection) { collection in
+            Button(role: .destructive) {
+                // Remove collection from model data
+                modelData.remove(collection)
+                
+                isEditing = false
+                dismiss()
+            } label: {
+                Text("Delete", comment: "Delete button shown in an alert asking for confirmation to delete the collection.")
+            }
+            Button("Keep") {
+                isShowingDeleteConfirmation = false
+            }
+        } message: { details in
+            Text("Select Delete to permanently remove ‘\(collection.name)’.",
+                 comment: "Message in an alert asking the person whether they want to delete a collection with a given name.")
+        }
+    }
+}
+
+extension AnyTransition {
+    @MainActor static func editButtonTransition() -> AnyTransition {
+        .asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity)
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections.last!
+
+    NavigationStack {
+        CollectionDetailView(collection: previewCollection)
+            .environment(modelData)
+    }
+}
+
+
+
+
+---
+File: /Landmarks/Views/Collections/Collections/CollectionListItemView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that represents a single landmark collection in a grid.
+*/
+
+import SwiftUI
+
+/// A view that represents a single landmark collection in a grid.
+struct CollectionListItemView: View {
+    let collection: LandmarkCollection
+
+    var body: some View {
+        VStack {
+            collection.imageForListItem()
+                .cornerRadius(Constants.cornerRadius)
+            Text(collection.name)
+            Text("\(collection.landmarks.count) items")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections.first!
+
+    CollectionListItemView(collection: previewCollection)
+}
+
+
+
+---
+File: /Landmarks/Views/Collections/Collections/CollectionsGrid.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a grid of landmark collections.
+*/
+
+import SwiftUI
+
+/// A view that shows a grid of landmark collections.
+struct CollectionsGrid: View {
+    @Environment(ModelData.self) var modelData
+    
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: Constants.collectionGridSpacing) {
+                ForEach(modelData.userCollections, id: \.id) { collection in
+                    NavigationLink(value: collection) {
+                        CollectionListItemView(collection: collection)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.trailing, Constants.standardPadding)
+    }
+    
+    private var columns: [GridItem] {
+        [ GridItem(.adaptive(minimum: Constants.collectionGridItemMinSize,
+                             maximum: Constants.collectionGridItemMaxSize),
+                   spacing: Constants.collectionGridSpacing) ]
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+
+    CollectionsGrid()
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Collections/Collections/CollectionsView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a person's favorite landmarks and custom landmark collections.
+*/
+
+import SwiftUI
+
+/// A view that shows a person's favorite landmarks and custom landmark collections.
+struct CollectionsView: View {
+    @Environment(ModelData.self) var modelData
+
+    var body: some View {
+        @Bindable var modelData = modelData
+
+        ScrollView(.vertical) {
+            LazyVStack {
+                HStack {
+                    CollectionTitleView(title: "Favorites", comment: "Section title above favorite collections.")
+                    Spacer()
+                }
+                .padding(.leading, Constants.leadingContentInset)
+                
+                LandmarkHorizontalListView(landmarkList: modelData.favoritesCollection.landmarks)
+                    .containerRelativeFrame(.vertical) { height, axis in
+                        let proposedHeight = height * Constants.landmarkListPercentOfHeight
+                        if proposedHeight > Constants.landmarkListMinimumHeight {
+                            return proposedHeight
+                        }
+                        return Constants.landmarkListMinimumHeight
+                    }
+
+                HStack {
+                    CollectionTitleView(title: "My Collections", comment: "Section title above the person's collections.")
+                    Spacer()
+                }
+                .padding(.leading, Constants.leadingContentInset)
+                
+                CollectionsGrid()
+                    .padding(.leading, Constants.leadingContentInset)
+            }
+        }
+        .ignoresSafeArea(.keyboard, edges: [.bottom])
+        .navigationTitle("Collections")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    let newCollection = modelData.addUserCollection()
+                    modelData.path.append(newCollection)
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .navigationDestination(for: Landmark.self) { landmark in
+            LandmarkDetailView(landmark: landmark)
+        }
+        .navigationDestination(for: LandmarkCollection.self) { collection in
+            CollectionDetailView(collection: collection)
+        }
+    }
+}
+
+private struct CollectionTitleView: View {
+    let title: LocalizedStringKey
+    let comment: StaticString
+    
+    var body: some View {
+        Text(title, comment: comment)
+            .font(.title2)
+            .bold()
+            .padding(.top, Constants.titleTopPadding)
+    }
+}
+
+#Preview {
+    CollectionsView()
+        .environment(ModelData())
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Detail/LandmarkCollectionsMenu.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A menu a person uses to add or remove a landmark from a collection.
+*/
+
+import SwiftUI
+
+/// A menu a person uses to add or remove a landmark from a collection.
+struct LandmarkCollectionsMenu: View {
+    @Environment(ModelData.self) private var modelData
+    let landmark: Landmark
+
+    var body: some View {
+        Menu("Collections", systemImage: "book.closed") {
+            ForEach(modelData.userCollections) {
+                @Bindable var collection = $0
+                Toggle(collection.name, isOn: $collection[contains: landmark])
+            }
+        }
+        .menuIndicator(.hidden)
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1016] ?? modelData.landmarks.first!
+
+    LandmarkCollectionsMenu(landmark: previewLandmark)
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Detail/LandmarkDetailInspectorView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows extra information about a landmark in an inspector.
+*/
+
+import SwiftUI
+
+/// A view that shows extra information about a landmark in an inspector.
+struct LandmarkDetailInspectorView: View {
+    @Environment(ModelData.self) var modelData
+    
+    let landmark: Landmark
+    @State var selectedSegment: Segment = .metadataAndMap
+    @Binding var inspectorIsPresented: Bool
+
+    enum Segment {
+        case metadataAndMap
+        case activities
+    }
+    
+    var body: some View {
+        VStack {
+            Picker("View Mode", selection: $selectedSegment) {
+                Text("Map (Picker)", comment: "Picker element that lets people switch the content of the Inspector to 'map'.")
+                    .tag(Segment.metadataAndMap)
+                Text("Activities (Picker)", comment: "Picker element that lets people switch the content of the Inspector to 'activities'.")
+                    .tag(Segment.activities)
+            }
+            .labelsHidden()
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+            
+            if selectedSegment == .metadataAndMap {
+                LandmarkInspectorFormView(landmark: landmark)
+            } else {
+                LandmarkInspectorBadgeView(landmark: landmark)
+            }
+        }
+        #if os(iOS)
+        .toolbarVisibility(UIDevice.current.userInterfaceIdiom == .phone ? .visible : .hidden, for: .automatic)
+        .toolbar {
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Button {
+                    inspectorIsPresented.toggle()
+                } label: {
+                    Label("Close", systemImage: "xmark")
+                }
+            }
+        }
+        #endif
+    }
+}
+
+private struct LandmarkInspectorFormView: View {
+    @Environment(ModelData.self) var modelData
+    
+    let landmark: Landmark
+
+    var body: some View {
+        Form {
+            Section("Map") {
+                LandmarkDetailMapView(landmark: landmark, landmarkMapItem: modelData.mapItemsByLandmarkId[landmark.id])
+                .aspectRatio(Constants.mapAspectRatio, contentMode: .fit)
+                .cornerRadius(Constants.cornerRadius)
+            }
+            Section("Metadata") {
+                LabeledContent("Coordinates", value: landmark.formattedCoordinates)
+                LabeledContent("Total Area", value: landmark.formattedTotalArea)
+                LabeledContent("Elevation", value: landmark.formattedElevation)
+                LabeledContent("Location", value: landmark.formattedLocation)
+            }
+            .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+private struct LandmarkInspectorBadgeView: View {
+    let landmark: Landmark
+
+    var body: some View {
+        VStack {
+            if let badge = landmark.badge,
+               let activities = landmark.badgeProgress?.activities,
+               let badgeProgress = landmark.badgeProgress {
+                Form {
+                    Section() {
+                        ForEach(activities, id: \.self) { activity in
+                            LabeledContent {
+                                Group {
+                                    if badgeProgress.isCompleted(activity) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .symbolRenderingMode(.palette)
+                                            .foregroundStyle(.white, .indigo)
+                                            .font(.title)
+                                            .padding(.trailing, Constants.standardPadding)
+                                    } else {
+                                        Image(systemName: "circle")
+                                            .symbolRenderingMode(.palette)
+                                            .foregroundStyle(.gray)
+                                            .font(.title)
+                                            .padding(.trailing, Constants.standardPadding)
+                                    }
+                                }
+                                .onTapGesture {
+                                    if badgeProgress.isCompleted(activity) {
+                                        badgeProgress.remove(activity)
+                                    } else {
+                                        badgeProgress.add(activity)
+                                    }
+                                }
+                            } label: {
+                                Text(activity.description)
+                            }
+                        }
+                    }
+                    if badgeProgress.earned {
+                        Section() {
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    EarnedBadgeView(badge: badge)
+                                    Spacer()
+                                }
+                                Text("You earned the \(landmark.name) badge!", comment: "Text that indicates you earned a badge for a landmark.")
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                    }
+                }
+            } else {
+                Spacer()
+                Text("There isn’t a badge for this landmark.", comment: "Text that indicates the landmark doesn't have a badge.")
+                Spacer()
+            }
+        }
+    }
+}
+
+private struct EarnedBadgeView: View {
+    var badge: Badge
+    var body: some View {
+        Image(systemName: badge.symbolName)
+            .foregroundStyle(.white)
+            .font(.system(size: badge.fontSize(forEarnedView: true)))
+            .fontWeight(.medium)
+            .frame(width: Constants.earnedBadgeSize, height: Constants.earnedBadgeSize)
+            .background(content: {
+                Image(systemName: "hexagon.fill")
+                    .foregroundStyle(badge.badgeColor)
+                    .font(.system(size: Constants.earnedHexagonSize))
+                    .frame(width: Constants.earnedBadgeSize,
+                           height: Constants.earnedBadgeSize)
+            })
+            .padding(Constants.badgeImagePadding)
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    modelData.selectedLandmark = modelData.landmarksById[1016] ?? modelData.landmarks.first!
+
+    return LandmarkDetailInspectorView(landmark: modelData.selectedLandmark!, inspectorIsPresented: .constant(true))
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Detail/LandmarkDetailMapView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a single landmark on a map.
+*/
+
+import SwiftUI
+import MapKit
+
+/// A view that shows a single landmark on a map.
+struct LandmarkDetailMapView: View {
+    let landmark: Landmark
+    var landmarkMapItem: MKMapItem?
+    @State var mapCameraPositionForLandmark: MapCameraPosition = .automatic
+
+    var body: some View {
+        Map(position: $mapCameraPositionForLandmark, interactionModes: []) {
+            if let landmarkMapItem = landmarkMapItem {
+                Marker(item: landmarkMapItem)
+            }
+        }
+        .onAppear {
+            mapCameraPositionForLandmark = .region(landmark.coordinateRegion)
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1012] ?? modelData.landmarks.first!
+    let previewMapItem = modelData.mapItemsByLandmarkId[1012]
+
+    LandmarkDetailMapView(landmark: previewLandmark, landmarkMapItem: previewMapItem)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Detail/LandmarkDetailView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a single landmark, with an image and description.
+*/
+
+import SwiftUI
+import MapKit
+
+/// A view that shows a single landmark, with an image and description.
+struct LandmarkDetailView: View {
+    @Environment(ModelData.self) private var modelData
+    let landmark: Landmark
+
+    var body: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: Constants.landmarkImagePadding) {
+                Image(landmark.backgroundImageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    .backgroundExtensionEffect()
+                    .flexibleHeaderContent()
+
+                VStack(alignment: .leading) {
+                    Text(landmark.name)
+                        .font(.title)
+                        .fontWeight(.bold)
+
+                    Text(landmark.description)
+                        .textSelection(.enabled)
+                }
+                .padding(.leading, Constants.leadingContentInset)
+                .padding(.trailing, Constants.leadingContentInset * 2)
+            }
+        }
+        .flexibleHeaderScrollView()
+        .toolbar {
+            ToolbarSpacer(.flexible)
+
+            ToolbarItem {
+                ShareLink(item: landmark, preview: landmark.sharePreview)
+            }
+
+            ToolbarSpacer(.fixed)
+            
+            ToolbarItemGroup {
+                LandmarkFavoriteButton(landmark: landmark)
+
+                LandmarkCollectionsMenu(landmark: landmark)
+            }
+            
+            ToolbarSpacer(.fixed)
+        
+            ToolbarItem {
+                Button("Info", systemImage: "info") {
+                    modelData.selectedLandmark = landmark
+                    modelData.isLandmarkInspectorPresented.toggle()
+                }
+            }
+        }
+        .toolbar(removing: .title)
+        .ignoresSafeArea(edges: .top)
+    }
+}
+
+private struct FavoriteButtonLabel: View {
+    var isFavorite: Bool
+    var body: some View {
+        Label(isFavorite ? "Unfavorite" : "Favorite", systemImage: "heart")
+            .symbolVariant(isFavorite ? .fill : .none)
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1016] ?? modelData.landmarks.first!
+
+    NavigationSplitView {
+        List {
+            Section {
+                ForEach(NavigationOptions.mainPages) { page in
+                    NavigationLink(value: page) {
+                        Label(page.name, systemImage: page.symbolName)
+                    }
+                }
+            }
+        }
+    } detail: {
+        LandmarkDetailView(landmark: previewLandmark)
+    }
+    .inspector(isPresented: $modelData.isLandmarkInspectorPresented) {
+        if let landmark = modelData.selectedLandmark {
+            LandmarkDetailInspectorView(landmark: landmark, inspectorIsPresented: $modelData.isLandmarkInspectorPresented)
+        } else {
+            EmptyView()
+        }
+    }
+    .environment(modelData)
+    .onGeometryChange(for: CGSize.self) { geometry in
+        geometry.size
+    } action: {
+        modelData.windowSize = $0
+    }
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Detail/LandmarkFavoriteButton.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A button for adding or removing a landmark from the list of favorite landmarks.
+*/
+
+import SwiftUI
+
+/// A button for adding or removing a landmark from the list of favorite landmarks.
+struct LandmarkFavoriteButton: View {
+    @Environment(ModelData.self) private var modelData
+    let landmark: Landmark
+
+    var body: some View {
+        Button {
+            modelData.toggleFavorite(landmark)
+        } label: {
+            FavoriteButtonLabel(isFavorite: modelData.isFavorite(landmark))
+        }
+    }
+}
+
+private struct FavoriteButtonLabel: View {
+    var isFavorite: Bool
+    var body: some View {
+        Label(isFavorite ? "Unfavorite" : "Favorite", systemImage: "heart")
+            .symbolVariant(isFavorite ? .fill : .none)
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1016] ?? modelData.landmarks.first!
+
+    LandmarkFavoriteButton(landmark: previewLandmark)
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Grid/LandmarkGridItemView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a single landmark in a grid.
+*/
+
+import SwiftUI
+
+/// A view that shows a single landmark in a grid.
+struct LandmarkGridItemView: View {
+    let landmark: Landmark
+
+    var body: some View {
+        Image(landmark.thumbnailImageName)
+            .resizable()
+            .aspectRatio(1, contentMode: .fill)
+            .overlay {
+                ReadabilityRoundedRectangle()
+            }
+            .clipped()
+            .cornerRadius(Constants.cornerRadius)
+            .overlay(alignment: .bottom) {
+                Text(landmark.name)
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.white)
+                    .padding(.bottom)
+            }
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1001] ?? modelData.landmarks.first!
+    LandmarkGridItemView(landmark: previewLandmark)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Grid/LandmarksGrid.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a group of landmarks in a grid.
+*/
+
+import SwiftUI
+
+/// A view that shows a group of landmarks in a grid.
+struct LandmarksGrid: View {
+    @Binding var landmarks: [Landmark]
+    let forEditing: Bool
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: Constants.landmarkGridSpacing) {
+                ForEach(landmarks, id: \.id) { landmark in
+                    if forEditing {
+                        LandmarkGridItemView(landmark: landmark)
+                    } else {
+                        NavigationLink(destination: LandmarkDetailView(landmark: landmark)) {
+                            LandmarkGridItemView(landmark: landmark)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var columns: [GridItem] {
+        if forEditing {
+            return [ GridItem(.adaptive(minimum: Constants.landmarkGridItemEditingMinSize,
+                                        maximum: Constants.landmarkGridItemEditingMaxSize),
+                              spacing: Constants.landmarkGridSpacing) ]
+        }
+        return [ GridItem(.adaptive(minimum: Constants.landmarkGridItemMinSize,
+                                    maximum: Constants.landmarkGridItemMaxSize),
+                          spacing: Constants.landmarkGridSpacing) ]
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections[2]
+
+    LandmarksGrid(landmarks: .constant(previewCollection.landmarks), forEditing: true)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Selection/LandmarksSelectionList.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a list of landmarks, organized by continent, for selection.
+*/
+
+import SwiftUI
+
+/// A view that shows a list of landmarks, organized by continent, for selection.
+struct LandmarksSelectionList: View {
+    @Environment(ModelData.self) var modelData
+    @Binding var landmarks: [Landmark]
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(ModelData.orderedContinents, id: \.self) { continent in
+                    Section(header: Text(continent.name)) {
+                        ForEach(modelData.landmarks(in: continent)) { landmark in
+                            LandmarksSelectionListItem(landmark: landmark, landmarks: $landmarks)
+                                .onTapGesture {
+                                    if landmarks.contains(landmark) {
+                                        if let landmarkIndex = landmarks.firstIndex(of: landmark) {
+                                            landmarks.remove(at: landmarkIndex)
+                                        }
+                                    } else {
+                                        landmarks.append(landmark)
+                                    }
+                                }
+                        }
+                    }
+                }
+            }
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .navigationTitle("Select landmarks")
+            .toolbar {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewCollection = modelData.userCollections.last!
+
+    LandmarksSelectionList(landmarks: .constant(previewCollection.landmarks))
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmark Selection/LandmarksSelectionListItem.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a single landmark in a selection list.
+*/
+
+import SwiftUI
+
+/// A view that shows a single landmark in a selection list.
+struct LandmarksSelectionListItem: View {
+    let landmark: Landmark
+    @Binding var landmarks: [Landmark]
+    
+    var body: some View {
+        HStack {
+            Image(landmark.thumbnailImageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: Constants.landmarkSelectionImageSize.width,
+                       height: Constants.landmarkSelectionImageSize.height)
+                .cornerRadius(Constants.landmarkSelectionImageCornerRadius)
+                .padding(.trailing, Constants.standardPadding)
+            Text(landmark.name)
+                .font(.title3)
+            Spacer()
+            if landmarks.contains(landmark) {
+                Image(systemName: "checkmark.circle.fill")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .indigo)
+                    .font(.title)
+                    .padding(.trailing, Constants.standardPadding)
+
+            } else {
+                Image(systemName: "circle")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.gray)
+                    .font(.title)
+                    .padding(.trailing, Constants.standardPadding)
+
+            }
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var landmarks: [Landmark] = []
+    let modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1012] ?? modelData.landmarks.first!
+    
+    LandmarksSelectionListItem(landmark: previewLandmark, landmarks: $landmarks)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmarks View/LandmarkFeaturedItemView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows the featured landmark with a large image.
+*/
+
+import SwiftUI
+
+/// A view that shows the featured landmark with a large image.
+struct LandmarkFeaturedItemView: View {
+    @Environment(ModelData.self) var modelData
+    let landmark: Landmark
+
+    var body: some View {
+        NavigationLink(value: landmark) {
+            Image(decorative: landmark.backgroundImageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .clipped()
+                .backgroundExtensionEffect()
+                .overlay(alignment: .bottom) {
+                    VStack {
+                        Text("Featured Landmark", comment: "Big headline in the main image of featured landmarks.")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .opacity(0.8)
+                        Text(landmark.name)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Button("Learn More") {
+                            modelData.path.append(landmark)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding(.bottom, Constants.learnMorePadding)
+                    }
+                    .padding([.bottom], Constants.learnMoreBottomPadding)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1012] ?? modelData.landmarks.first!
+
+    LandmarkFeaturedItemView(landmark: previewLandmark)
+        .frame(height: 400.0)
+        .environment(modelData)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmarks View/LandmarkHorizontalListView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that scrolls a list of landmarks horizontally.
+*/
+
+import SwiftUI
+
+/// A view that scrolls a list of landmarks horizontally.
+struct LandmarkHorizontalListView: View {
+    let landmarkList: [Landmark]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: Constants.standardPadding) {
+                Spacer()
+                    .frame(width: Constants.standardPadding)
+                ForEach(landmarkList) { landmark in
+                    NavigationLink(value: landmark) {
+                        LandmarkListItemView(landmark: landmark)
+                            .aspectRatio(Constants.landmarkListItemAspectRatio, contentMode: .fill)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+
+    LandmarkHorizontalListView(landmarkList: modelData.landmarks)
+        .frame(height: 180.0)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmarks View/LandmarkListItemView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a single landmark in a list.
+*/
+
+import SwiftUI
+
+/// A view that shows a single landmark in a list.
+struct LandmarkListItemView: View {
+    let landmark: Landmark
+
+    var body: some View {
+        Image(landmark.thumbnailImageName)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+            .overlay {
+                ReadabilityRoundedRectangle()
+            }
+            .clipped()
+            .cornerRadius(Constants.cornerRadius)
+            .overlay(alignment: .bottom) {
+                Text(landmark.name)
+                    .font(.title3).fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.white)
+                    .padding(.bottom)
+            }
+            .contextMenu {
+                ShareLink(item: landmark, preview: landmark.sharePreview)
+                LandmarkFavoriteButton(landmark: landmark)
+                LandmarkCollectionsMenu(landmark: landmark)
+            }
+    }
+}
+
+#Preview {
+    let modelData = ModelData()
+    let previewLandmark = modelData.landmarksById[1001] ?? modelData.landmarks.first!
+    LandmarkListItemView(landmark: previewLandmark)
+        .frame(width: 252.0, height: 180.0)
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmarks View/LandmarksView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that shows a featured landmark, and other landmarks organized by continent.
+*/
+
+import SwiftUI
+
+/// A view that shows a featured landmark, and other landmarks organized by continent.
+struct LandmarksView: View {
+    @Environment(ModelData.self) private var modelData
+    @Environment(\.isSearching) private var isSearching
+    
+    var body: some View {
+        @Bindable var modelData = modelData
+
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: Constants.standardPadding) {
+
+                LandmarkFeaturedItemView(landmark: modelData.featuredLandmark!)
+                    .flexibleHeaderContent()
+
+                ForEach(ModelData.orderedContinents, id: \.self) { continent in
+                    Group {
+                        ContinentTitleView(title: continent.name)
+                        if let landmarkList = modelData.landmarksByContinent[continent] {
+                            LandmarkHorizontalListView(landmarkList: landmarkList)
+                                .containerRelativeFrame(.vertical) { height, axis in
+                                    let proposedHeight = height * Constants.landmarkListPercentOfHeight
+                                    if proposedHeight > Constants.landmarkListMinimumHeight {
+                                        return proposedHeight
+                                    }
+                                    return Constants.landmarkListMinimumHeight
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        .flexibleHeaderScrollView()
+        .ignoresSafeArea(.keyboard)
+        .ignoresSafeArea(edges: .top)
+        .toolbar(removing: .title)
+        .navigationDestination(for: Landmark.self) { landmark in
+            LandmarkDetailView(landmark: landmark)
+        }
+    }
+}
+
+private struct ContinentTitleView: View {
+    var title: String
+    
+    var body: some View {
+        Text(title)
+            .font(.title2)
+            .bold()
+            .padding(.top, Constants.titleTopPadding)
+            .padding(.bottom, Constants.titleBottomPadding)
+            .padding(.leading, Constants.leadingContentInset)
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+    
+    LandmarksView()
+        .environment(modelData)
+        .onGeometryChange(for: CGSize.self) { geometry in
+            geometry.size
+        } action: {
+            modelData.windowSize = $0
+        }
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks/Landmarks View/ReadabilityRoundedRectangle.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that adds a gradient over an image to aid legibility for a text overlay.
+*/
+
+import SwiftUI
+
+/// A view that adds a gradient over an image to improve legibility for a text overlay.
+struct ReadabilityRoundedRectangle: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: Constants.cornerRadius)
+            .foregroundStyle(.clear)
+            .background(
+                LinearGradient(colors: [.black.opacity(0.8), .clear], startPoint: .bottom, endPoint: .center)
+            )
+            .containerRelativeFrame(.vertical)
+            .clipped()
+    }
+}
+
+
+
+
+---
+File: /Landmarks/Views/Landmarks/FlexibleHeader.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+View modifiers that stretch a view in a scroll view when a person scrolls beyond the top bounds.
+*/
+
+import SwiftUI
+
+@Observable private class FlexibleHeaderGeometry {
+    var offset: CGFloat = 0
+}
+
+/// A view modifer that stretches content when the containing geometry offset changes.
+private struct FlexibleHeaderContentModifier: ViewModifier {
+    @Environment(ModelData.self) private var modelData
+    @Environment(FlexibleHeaderGeometry.self) private var geometry
+
+    func body(content: Content) -> some View {
+        let height = (modelData.windowSize.height / 2) - geometry.offset
+        content
+            .frame(height: height)
+            .padding(.bottom, geometry.offset)
+            .offset(y: geometry.offset)
+    }
+}
+
+/// A view modifier that tracks scroll view geometry to stretch a view with ``FlexibleHeaderContentModifier``.
+private struct FlexibleHeaderScrollViewModifier: ViewModifier {
+    @State private var geometry = FlexibleHeaderGeometry()
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                min(geometry.contentOffset.y + geometry.contentInsets.top, 0)
+            } action: { _, offset in
+                geometry.offset = offset
+            }
+            .environment(geometry)
+    }
+}
+
+// MARK: - View Extensions
+
+extension ScrollView {
+    /// A function that returns a view after it applies `FlexibleHeaderScrollViewModifier` to it.
+    @MainActor func flexibleHeaderScrollView() -> some View {
+        modifier(FlexibleHeaderScrollViewModifier())
+    }
+}
+
+extension View {
+    /// A function that returns a view after it applies `FlexibleHeaderContentModifier` to it.
+    func flexibleHeaderContent() -> some View {
+        modifier(FlexibleHeaderContentModifier())
+    }
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks Split View/LandmarksSplitView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that establishes split view navigation for the app.
+*/
+
+import SwiftUI
+
+/// A view that establishes split view navigation for the app.
+struct LandmarksSplitView: View {
+    @Environment(ModelData.self) var modelData
+    @State private var preferredColumn: NavigationSplitViewColumn = .detail
+
+    var body: some View {
+        @Bindable var modelData = modelData
+        
+        NavigationSplitView(preferredCompactColumn: $preferredColumn) {
+            List {
+                Section {
+                    ForEach(NavigationOptions.mainPages) { page in
+                        NavigationLink(value: page) {
+                            Label(page.name, systemImage: page.symbolName)
+                        }
+                    }
+                }
+            }
+            .navigationDestination(for: NavigationOptions.self) { page in
+                NavigationStack(path: $modelData.path) {
+                    page.viewForPage()
+                }
+                .navigationDestination(for: Landmark.self) { landmark in
+                    LandmarkDetailView(landmark: landmark)
+                }
+                .navigationDestination(for: LandmarkCollection.self) { collection in
+                    CollectionDetailView(collection: collection)
+                }
+                .showsBadges()
+            }
+            .frame(minWidth: 150)
+        } detail: {
+            NavigationStack(path: $modelData.path) {
+                NavigationOptions.landmarks.viewForPage()
+            }
+            .navigationDestination(for: Landmark.self) { landmark in
+                LandmarkDetailView(landmark: landmark)
+            }
+            .showsBadges()
+        }
+        // Adds global search, where the system positions the search bar automatically
+        // in content views.
+        .searchable(text: $modelData.searchString, prompt: "Search")
+        // Adds the inspector, which the landmark detail view uses to display
+        // additional information.
+        .inspector(isPresented: $modelData.isLandmarkInspectorPresented) {
+            if let landmark = modelData.selectedLandmark {
+                LandmarkDetailInspectorView(landmark: landmark, inspectorIsPresented: $modelData.isLandmarkInspectorPresented)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var modelData = ModelData()
+
+    LandmarksSplitView()
+        .environment(modelData)
+        .onGeometryChange(for: CGSize.self) { geometry in
+            geometry.size
+        } action: {
+            modelData.windowSize = $0
+        }
+}
+
+
+
+---
+File: /Landmarks/Views/Landmarks Split View/NavigationOptions.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+An enumeration of navigation options in the app.
+*/
+
+import SwiftUI
+
+/// An enumeration of navigation options in the app.
+enum NavigationOptions: Equatable, Hashable, Identifiable {
+    /// A case that represents viewing the app's landmarks, organized by continent.
+    case landmarks
+    /// A case that represents viewing the app's landmarks on a map.
+    case map
+    /// A case that represents viewing a person's favorite landmarks and other custom landmark collections.
+    case collections
+    
+    static let mainPages: [NavigationOptions] = [.landmarks, .map, .collections]
+    
+    var id: String {
+        switch self {
+        case .landmarks: return "Landmarks"
+        case .map: return "Map"
+        case .collections: return "Collections"
+        }
+    }
+    
+    var name: LocalizedStringResource {
+        switch self {
+        case .landmarks: LocalizedStringResource("Landmarks", comment: "Title for the Landmarks tab, shown in the sidebar.")
+        case .map: LocalizedStringResource("Map", comment: "Title for the Map tab, shown in the sidebar.")
+        case .collections: LocalizedStringResource("Collections", comment: "Title for the Collections tab, shown in the sidebar.")
+        }
+    }
+    
+    var symbolName: String {
+        switch self {
+        case .landmarks: "building.columns"
+        case .map: "map"
+        case .collections: "book.closed"
+        }
+    }
+    
+    /// A view builder that the split view uses to show a view for the selected navigation option.
+    @MainActor @ViewBuilder func viewForPage() -> some View {
+        switch self {
+        case .landmarks: LandmarksView()
+        case .map: MapView()
+        case .collections: CollectionsView()
+        }
+        
+    }
+}
+
+
+
+---
+File: /Landmarks/Views/Map/MapView.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+A view that presents all the landmarks in a global map.
+*/
+
+import SwiftUI
+import MapKit
+
+/// A view that presents all the landmarks in a global map.
+struct MapView: View {
+    @Environment(ModelData.self) var modelData
+    
+    @State private var selection: MKMapItem?
+    @State private var landmarkMapItems: [MKMapItem] = []
+    
+    var body: some View {
+        @Bindable var modelData = modelData
+        
+        Map(selection: $selection) {
+            ForEach(modelData.mapItemsForLandmarks, id: \.self) { landmarkMapItem in
+                Marker(item: landmarkMapItem)
+            }
+            .mapItemDetailSelectionAccessory()
+            
+            if modelData.locationFinder?.currentLocation != nil {
+                UserAnnotation()
+            }
+        }
+        .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        .onAppear {
+            if modelData.locationFinder == nil {
+                modelData.locationFinder = LocationFinder()
+            }
+        }
+        .toolbar(removing: .title)
+    }
+}
+
+#Preview {
+    MapView()
+        .environment(ModelData())
+}
+
+
+
+---
+File: /Landmarks/LandmarksApp.swift
+---
+
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+The main app declaration.
+*/
+
+import SwiftUI
+
+/// The main app declaration.
+@main
+struct LandmarksApp: App {
+    /// An object that manages the app's data and state.
+    @State private var modelData = ModelData()
+
+    var body: some Scene {
+        WindowGroup {
+            LandmarksSplitView()
+                .environment(modelData)
+                .frame(minWidth: 375.0, minHeight: 600.0)
+                // Keeps the current window's size for use in scrolling header calculations.
+                .onGeometryChange(for: CGSize.self) { geometry in
+                    geometry.size
+                } action: {
+                    modelData.windowSize = $0
+                }
+        }
+    }
+}
+

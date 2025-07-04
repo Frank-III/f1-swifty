@@ -37,10 +37,19 @@ public final class AppEnvironment {
         // Initialize notification manager after self is available
         Task { @MainActor in
             self.notificationManager = NotificationManager(appEnvironment: self)
+            
+            // Auto-connect if enabled
+            await checkAutoConnect()
         }
     }
     
     // MARK: - Connection Management
+    
+    private func checkAutoConnect() async {
+        if settingsStore.autoConnect {
+            await connect()
+        }
+    }
     
     func connect() async {
         connectionStatus = .connecting
@@ -114,6 +123,17 @@ enum ConnectionStatus {
             return "Connecting..."
         case .connected:
             return "Connected"
+        }
+    }
+    
+    var statusText: String {
+        switch self {
+        case .disconnected:
+            return "Offline"
+        case .connecting:
+            return "Connecting"
+        case .connected:
+            return "Live"
         }
     }
     

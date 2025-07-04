@@ -34,6 +34,9 @@ final class SettingsStore {
     @ObservationIgnored
     @Shared(.appStorage("showCornerNumbers")) var showCornerNumbers = false
     
+    @ObservationIgnored
+    @Shared(.appStorage("autoConnect")) var autoConnect = true
+    
     // MARK: - Computed Properties
     
     var favoriteDriverIDs: Set<String> {
@@ -87,6 +90,7 @@ final class SettingsStore {
         $trackMapZoom.withLock { $0 = 1.0 }
         $compactMode.withLock { $0 = false }
         $showCornerNumbers.withLock { $0 = false }
+        $autoConnect.withLock { $0 = true }
     }
 }
 
@@ -100,6 +104,7 @@ extension SettingsStore {
         ("30 seconds", 30),
         ("1 minute", 60),
         ("2 minutes", 120),
-        ("5 minutes", 300)
+        ("5 minutes", 300),
+        ("Custom", -1)
     ]
 }

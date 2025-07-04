@@ -8,6 +8,12 @@
 import Foundation
 import F1DashModels
 
+enum WebSocketError: Error {
+    case connectionFailed
+    case invalidMessage
+    case disconnected
+}
+
 actor WebSocketClient {
     // MARK: - Properties
     
@@ -36,13 +42,29 @@ actor WebSocketClient {
         webSocketTask = urlSession.webSocketTask(with: serverURL)
         webSocketTask?.resume()
         
+        // Wait a moment to see if connection succeeds
+        try await Task.sleep(for: .milliseconds(500))
+        
+        // Check if connection is actually established
+        guard let task = webSocketTask, task.state == .running else {
+            throw WebSocketError.connectionFailed
+        }
+        
         // Start receiving messages
         Task {
             await receiveMessages()
         }
         
-        // Send initial ping
-        webSocketTask?.sendPing(pongReceiveHandler: { _ in })
+        // Send initial ping to verify connection
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            webSocketTask?.sendPing { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
     }
     
     func disconnect() {
