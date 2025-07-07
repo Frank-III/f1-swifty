@@ -98,7 +98,7 @@ public struct SettingsView: View {
             .foregroundStyle(.secondary)
         
         NavigationLink {
-            iOSDriversSettingsView()
+            FavoriteDriversView()
         } label: {
             HStack {
                 Text("Manage Favorite Drivers")

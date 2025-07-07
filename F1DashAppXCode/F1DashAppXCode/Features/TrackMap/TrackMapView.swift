@@ -36,6 +36,61 @@ struct TrackMapView: View {
                                 drawDrivers(in: context, size: size)
                             }
                             .padding()
+                            
+                            // PiP/Live Activity button overlay
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    #if os(macOS)
+                                    Button {
+                                        appEnvironment.pictureInPictureManager.togglePiP()
+                                    } label: {
+                                        Label(
+                                            appEnvironment.pictureInPictureManager.isPiPActive ? "Exit Picture in Picture" : "Picture in Picture",
+                                            systemImage: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter"
+                                        )
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .padding()
+                                    #else
+                                    VStack(spacing: 8) {
+                                        // System PiP button
+                                        Button {
+                                            if appEnvironment.systemPictureInPictureManager?.isSystemPiPActive == true {
+                                                appEnvironment.systemPictureInPictureManager?.stopSystemPiP()
+                                            } else {
+                                                appEnvironment.systemPictureInPictureManager?.startSystemPiP()
+                                            }
+                                        } label: {
+                                            Label(
+                                                appEnvironment.systemPictureInPictureManager?.isSystemPiPActive == true ? "Exit Picture in Picture" : "Picture in Picture",
+                                                systemImage: appEnvironment.systemPictureInPictureManager?.isSystemPiPActive == true ? "pip.exit" : "pip.enter"
+                                            )
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        
+                                        // Live Activity button
+                                        Button {
+                                            Task {
+                                                if appEnvironment.liveActivityManager?.isLiveActivityActive == true {
+                                                    await appEnvironment.liveActivityManager?.endLiveActivity()
+                                                } else {
+                                                    await appEnvironment.liveActivityManager?.startLiveActivity()
+                                                }
+                                            }
+                                        } label: {
+                                            Label(
+                                                appEnvironment.liveActivityManager?.isLiveActivityActive == true ? "End Live Activity" : "Start Live Activity",
+                                                systemImage: appEnvironment.liveActivityManager?.isLiveActivityActive == true ? "livephoto.slash" : "livephoto"
+                                            )
+                                        }
+                                        .buttonStyle(.bordered)
+                                    }
+                                    .padding()
+                                    #endif
+                                }
+                                Spacer()
+                            }
                         } else {
                             ProgressView("Loading track map...")
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -101,16 +156,11 @@ struct TrackMapView: View {
                                     
                                     // Session info top-right
                                     VStack(alignment: .trailing, spacing: 4) {
-                                        if let sessionInfo = appEnvironment.liveSessionState.sessionInfo {
-                                            Text(sessionInfo.type.rawValue)
+                                        if let sessionInfo = appEnvironment.liveSessionState.sessionInfo,
+                                           let sessionType = sessionInfo.type {
+                                            Text(sessionType)
                                                 .font(.system(size: 12, weight: .semibold))
                                                 .foregroundStyle(.primary)
-                                            
-                                            if !sessionInfo.timeRemaining.isEmpty {
-                                                Text(sessionInfo.timeRemaining)
-                                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                                    .foregroundStyle(.secondary)
-                                            }
                                         }
                                     }
                                     .padding(.horizontal, 12)
@@ -150,7 +200,14 @@ struct TrackMapView: View {
                 .navigationTitle("Track Map")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        // Picture in Picture button
+                        Button {
+                            appEnvironment.pictureInPictureManager.togglePiP()
+                        } label: {
+                            Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
+                        }
+                        
                         Button {
                             showDriversList = true
                         } label: {

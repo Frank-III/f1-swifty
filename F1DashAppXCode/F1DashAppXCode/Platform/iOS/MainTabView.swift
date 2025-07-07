@@ -7,39 +7,105 @@
 
 import SwiftUI
 
+    enum DashboardSection: String, CaseIterable {
+          case all = "All"
+          case trackMap = "Track Map"
+          case trackStatus = "Track Status"
+          case session = "Session"
+          case liveTiming = "Live Timing"
+          case raceControl = "Race Control"
+    
+         var icon: String {
+            switch self {
+             case .all: return "square.grid.2x2"
+             case .trackMap: return "map"
+             case .trackStatus: return "flag.checkered"
+             case .session: return "info.circle"
+             case .liveTiming: return "speedometer"
+              case .raceControl: return "flag.2.crossed"
+             }
+         }
+     }
+
 public struct MainTabView: View {
     public init() {}
     @Environment(AppEnvironment.self) private var appEnvironment
+    @State private var selectedTab = 0
+    @State private var showWeatherSheet = false
+    @State private var showTrackMapFullScreen = false
+    @State private var selectedDashboardSection: DashboardSection = .all
     
     public var body: some View {
-        TabView {
-            iOSDashboardView()
+        TabView(selection: $selectedTab) {
+            iOSDashboardView(selectedSection: $selectedDashboardSection)
                 .tabItem {
                     Label("Dashboard", systemImage: "speedometer")
                 }
+                .tag(0)
             
             StandingsView()
                 .tabItem {
                     Label("Standings", systemImage: "list.number")
                 }
+                .tag(1)
             
-            WeatherViewPlaceholder()
+            ScheduleView()
                 .tabItem {
-                    Label("Weather", systemImage: "cloud.sun")
+                    Label("Schedule", systemImage: "calendar")
                 }
+                .tag(2)
             
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
+                .tag(3)
         }
-        .modifier(PlatformTabBarModifier())
+        .modifier(iOS26TabAccessoryModifier(
+            appEnvironment: appEnvironment,
+            selectedTab: $selectedTab,
+            showWeatherSheet: $showWeatherSheet,
+            showTrackMapFullScreen: $showTrackMapFullScreen,
+            selectedDashboardSection: $selectedDashboardSection
+        ))
+//        .modifier(PlatformTabBarModifier())
         .task {
             // Auto-connect when view appears
             if appEnvironment.connectionStatus == .disconnected {
                 await appEnvironment.connect()
             }
         }
+        .sheet(isPresented: $showWeatherSheet) {
+            WeatherSheetView()
+        }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showTrackMapFullScreen) {
+            NavigationStack {
+                TrackMapView()
+                    .navigationTitle("Track Map")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                showTrackMapFullScreen = false
+                            }
+                        }
+                    }
+            }
+        }
+        #else
+        .sheet(isPresented: $showTrackMapFullScreen) {
+            TrackMapView()
+                .frame(minWidth: 600, minHeight: 400)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") {
+                            showTrackMapFullScreen = false
+                        }
+                    }
+                }
+        }
+        #endif
     }
 }
 
@@ -47,6 +113,9 @@ public struct MainTabView: View {
 
 struct iOSDashboardView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
+    @Binding var selectedSection: DashboardSection
+    @State private var showWeatherSheet = false
+    @State private var showRacePredictionSheet = false
     
     var body: some View {
         NavigationStack {
@@ -58,12 +127,22 @@ struct iOSDashboardView: View {
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         // Track Map - most critical for visual race understanding
-                        VStack(spacing: 12) {
+                        if selectedSection == .all || selectedSection == .trackMap {
+                            VStack(spacing: 12) {
                             HStack {
                                 Text("Track Map")
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 Spacer()
+                                
+                                // Picture in Picture button
+                                Button {
+                                    appEnvironment.pictureInPictureManager.togglePiP()
+                                } label: {
+                                    Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(PlatformGlassButtonStyle())
                                 
                                 // Quick navigation to dedicated full-screen map
                                 NavigationLink(destination: TrackMapView()) {
@@ -76,30 +155,43 @@ struct iOSDashboardView: View {
                             TrackMapView()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(maxHeight: 250)
+                            }
+                            .padding()
+                            .modifier(PlatformGlassCardModifier())
                         }
-                        .padding()
-                        .modifier(PlatformGlassCardModifier())
                         
                         // Track status - current race state
-                        TrackStatusView()
-                            .modifier(PlatformGlassCardModifier())
+                        if selectedSection == .all || selectedSection == .trackStatus {
+                            TrackStatusView()
+                                .modifier(PlatformGlassCardModifier())
+                        }
                         
-                        // Session info card
-                        VStack(spacing: 12) {
+                        // Session info card with weather indicator
+                        if selectedSection == .all || selectedSection == .session {
+                            VStack(spacing: 12) {
                             HStack {
                                 Text("Session")
                                     .font(.headline)
                                     .fontWeight(.semibold)
+                                
                                 Spacer()
+                                
+                                // Compact weather indicator
+                                CompactWeatherView()
+                                    .onTapGesture {
+                                        showWeatherSheet = true
+                                    }
                             }
                             
                             SessionInfoView()
+                            }
+                            .padding()
+                            .modifier(PlatformGlassCardModifier())
                         }
-                        .padding()
-                        .modifier(PlatformGlassCardModifier())
                         
                         // Driver timing - main content
-                        VStack(spacing: 12) {
+                        if selectedSection == .all || selectedSection == .liveTiming {
+                            VStack(spacing: 12) {
                             HStack {
                                 Text("Live Timing")
                                     .font(.headline)
@@ -116,12 +208,14 @@ struct iOSDashboardView: View {
                             }
                             
                             DriverListView()
+                            }
+                            .padding()
+                            .modifier(PlatformGlassCardModifier())
                         }
-                        .padding()
-                        .modifier(PlatformGlassCardModifier())
                         
                         // Latest race control message
-                        VStack(spacing: 12) {
+                        if selectedSection == .all || selectedSection == .raceControl {
+                            VStack(spacing: 12) {
                             HStack {
                                 Text("Race Control")
                                     .font(.headline)
@@ -130,9 +224,10 @@ struct iOSDashboardView: View {
                             }
                             
                             CompactRaceControlView()
+                            }
+                            .padding()
+                            .modifier(PlatformGlassCardModifier())
                         }
-                        .padding()
-                        .modifier(PlatformGlassCardModifier())
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
@@ -143,12 +238,31 @@ struct iOSDashboardView: View {
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-        }
-        .task {
-            // Auto-connect when view appears
-            if appEnvironment.connectionStatus == .disconnected {
-                await appEnvironment.connect()
+            .toolbar {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    // Weather button
+                    Button {
+                        showWeatherSheet = true
+                    } label: {
+                        Image(systemName: "cloud.sun")
+                    }
+                    
+                    // Race prediction button (if we have prediction data)
+                    if appEnvironment.liveSessionState.championshipPrediction != nil {
+                        Button {
+                            showRacePredictionSheet = true
+                        } label: {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                        }
+                    }
+                }
             }
+        }
+        .sheet(isPresented: $showWeatherSheet) {
+            WeatherSheetView()
+        }
+        .sheet(isPresented: $showRacePredictionSheet) {
+            RacePredictionSheetView()
         }
     }
 }
@@ -187,37 +301,38 @@ struct ConnectionStatusHeader: View {
 }
 
 
-// MARK: - Weather View Placeholder
-
-struct WeatherViewPlaceholder: View {
-    var body: some View {
-        NavigationStack {
-            Text("Weather - Coming Soon")
-                .navigationTitle("Weather")
-        }
-    }
-}
-
 // MARK: - Platform 26+ Enhancement Modifiers and Styles
 
 /// Liquid Glass card modifier for iOS/macOS 26+ with fallback
 struct PlatformGlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
-        #if os(iOS) || os(macOS)
-        if #available(iOS 26, macOS 26, *) {
+        #if os(iOS)
+        if #available(iOS 26, *) {
             content
-                .background(Color.platformBackground)
+                .background(Color(uiColor: .systemBackground))
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12), isEnabled: true)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         } else {
             content
-                .background(Color.platformBackground)
+                .background(Color(uiColor: .systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+        }
+        #elseif os(macOS)
+        if #available(macOS 26, *) {
+            content
+                .background(Color(nsColor: .controlBackgroundColor))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12), isEnabled: true)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            content
+                .background(Color(nsColor: .controlBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
         }
         #else
         content
-            .background(Color.platformBackground)
+            .background(Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
         #endif
@@ -293,18 +408,63 @@ struct PlatformTabBarModifier: ViewModifier {
 /// Glass header modifier for iOS/macOS 26+ with fallback  
 struct PlatformGlassHeaderModifier: ViewModifier {
     func body(content: Content) -> some View {
-        #if os(iOS) || os(macOS)
-        if #available(iOS 26, macOS 26, *) {
+        #if os(iOS)
+        if #available(iOS 26, *) {
             content
                 .background(.ultraThinMaterial)
                 .glassEffect(.regular, in: Rectangle(), isEnabled: true)
         } else {
             content
-                .background(Color.platformBackground)
+                .background(Color(uiColor: .systemBackground))
+        }
+        #elseif os(macOS)
+        if #available(macOS 26, *) {
+            content
+                .background(.ultraThinMaterial)
+                .glassEffect(.regular, in: Rectangle(), isEnabled: true)
+        } else {
+            content
+                .background(Color(nsColor: .windowBackgroundColor))
         }
         #else
         content
-            .background(Color.platformBackground)
+            .background(Color.clear)
+        #endif
+    }
+}
+
+// MARK: - iOS 26+ Tab Accessory Modifier
+
+struct iOS26TabAccessoryModifier: ViewModifier {
+    let appEnvironment: AppEnvironment
+    @Binding var selectedTab: Int
+    @Binding var showWeatherSheet: Bool
+    @Binding var showTrackMapFullScreen: Bool
+    @Binding var selectedDashboardSection: DashboardSection
+    
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        if #available(iOS 26, *) {
+            content
+                .tabViewBottomAccessory {
+                    // TODO: some bugs in iOS26
+//                    if appEnvironment.connectionStatus != .disconnected && selectedTab == 0 {
+                        DashboardSectionPills(
+                          selectedSection: $selectedDashboardSection,
+                            showTrackMapFullScreen: $showTrackMapFullScreen
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+//                    }
+                }
+                .tabBarMinimizeBehavior(.never)
+                .tabViewStyle(.sidebarAdaptable)
+        } else {
+            content
+        }
+        #else
+        content
         #endif
     }
 }

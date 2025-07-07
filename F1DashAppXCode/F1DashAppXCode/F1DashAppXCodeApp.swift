@@ -55,6 +55,9 @@ struct F1DashAppXCodeApp: App {
         WindowGroup {
             MainTabView()
                 .environment(appEnvironment)
+                #if !os(macOS)
+               .pictureInPictureOverlay(appEnvironment: appEnvironment)
+                #endif
         }
         #endif
     }

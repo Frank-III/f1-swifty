@@ -19,12 +19,17 @@ public final class AppEnvironment {
     let webSocketClient: WebSocketClient
     let dataBufferActor: DataBufferActor
     let settingsStore: SettingsStore
+    let pictureInPictureManager: PictureInPictureManager
+    let systemPictureInPictureManager: SystemPictureInPictureManager?
+    let liveActivityManager: LiveActivityManager?
     private var notificationManager: NotificationManager?
     
     // MARK: - State
     
     private(set) var liveSessionState: LiveSessionState
     private(set) var connectionStatus: ConnectionStatus = .disconnected
+    private(set) var schedule: [RaceRound] = []
+    private(set) var scheduleLoadingStatus: LoadingStatus = .idle
     
     // MARK: - Initialization
     
@@ -32,7 +37,22 @@ public final class AppEnvironment {
         self.webSocketClient = WebSocketClient()
         self.dataBufferActor = DataBufferActor()
         self.settingsStore = SettingsStore()
+        self.pictureInPictureManager = PictureInPictureManager()
         self.liveSessionState = LiveSessionState()
+        
+        // Initialize managers only on iOS
+        #if !os(macOS)
+        self.systemPictureInPictureManager = SystemPictureInPictureManager()
+        self.liveActivityManager = LiveActivityManager()
+        #else
+        self.systemPictureInPictureManager = nil
+        self.liveActivityManager = nil
+        #endif
+        
+        // Set reference to self in managers
+        self.pictureInPictureManager.appEnvironment = self
+        self.systemPictureInPictureManager?.appEnvironment = self
+        self.liveActivityManager?.appEnvironment = self
         
         // Initialize notification manager after self is available
         Task { @MainActor in
@@ -49,15 +69,63 @@ public final class AppEnvironment {
         if settingsStore.autoConnect {
             await connect()
         }
+        
+        // Also fetch schedule on startup
+        await fetchSchedule()
+    }
+    
+    // MARK: - Schedule Management
+    
+    func fetchSchedule() async {
+        guard scheduleLoadingStatus != .loading else { return }
+        
+        scheduleLoadingStatus = .loading
+        
+        do {
+            let serverURL = "http://localhost:8080"
+            let url = URL(string: "\(serverURL)/api/schedule")!
+            
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let decodedSchedule = try decoder.decode([RaceRound].self, from: data)
+            
+            // Update schedule with decoded data
+            schedule = decodedSchedule
+            scheduleLoadingStatus = .loaded
+        } catch {
+            print("Failed to fetch schedule: \(error)")
+            scheduleLoadingStatus = .error(error.localizedDescription)
+        }
+    }
+    
+    // Schedule computed properties
+    var upcomingRaces: [RaceRound] {
+        schedule.filter { $0.isUpcoming }
+    }
+    
+    var nextRace: RaceRound? {
+        upcomingRaces.first
+    }
+    
+    var currentRace: RaceRound? {
+        schedule.first { $0.isActive }
     }
     
     func connect() async {
+        // Prevent multiple simultaneous connection attempts
+        guard connectionStatus == .disconnected else { return }
+        
         connectionStatus = .connecting
         
         do {
             try await webSocketClient.connect()
             connectionStatus = .connected
-            await startDataProcessing()
+            
+            // Start data processing in a detached task to avoid blocking
+            Task.detached { [weak self] in
+                await self?.startDataProcessing()
+            }
         } catch {
             connectionStatus = .disconnected
             print("Failed to connect: \(error)")
@@ -146,5 +214,25 @@ enum ConnectionStatus {
         case .connected:
             return .green
         }
+    }
+}
+
+// MARK: - Loading Status
+
+enum LoadingStatus: Equatable {
+    case idle
+    case loading
+    case loaded
+    case error(String)
+    
+    var isLoading: Bool {
+        self == .loading
+    }
+    
+    var hasError: Bool {
+        if case .error = self {
+            return true
+        }
+        return false
     }
 }

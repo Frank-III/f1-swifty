@@ -47,6 +47,7 @@ actor WebSocketClient {
         
         // Check if connection is actually established
         guard let task = webSocketTask, task.state == .running else {
+            disconnect() // Clean up on failure
             throw WebSocketError.connectionFailed
         }
         
@@ -55,16 +56,8 @@ actor WebSocketClient {
             await receiveMessages()
         }
         
-        // Send initial ping to verify connection
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            webSocketTask?.sendPing { error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: ())
-                }
-            }
-        }
+        // Skip the ping verification to avoid hanging
+        // The connection state check above is sufficient
     }
     
     func disconnect() {
