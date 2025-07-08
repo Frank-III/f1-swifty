@@ -54,8 +54,8 @@ struct ScheduleView: View {
                 .padding(.bottom)
             }
             .modifier(PlatformEnhancedScrollingModifier())
-            .navigationTitle("Race Schedule")
             #if !os(macOS)
+            .navigationTitle("Race Schedule")
             .navigationBarTitleDisplayMode(.large)
             #endif
             .toolbar {

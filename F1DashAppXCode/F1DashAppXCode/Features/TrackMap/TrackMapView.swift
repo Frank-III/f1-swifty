@@ -11,18 +11,14 @@ import F1DashModels
 struct TrackMapView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @State private var viewModel: TrackMapViewModel?
-    @State private var showDriversList = false
     @State private var selectedDriver: String?
+    @State private var showAudioPanel = false
     
     var body: some View {
         Group {
             #if os(macOS)
-            // macOS version with sidebar
+            // macOS version - just map
             HStack(spacing: 0) {
-                DriverListSidebar()
-                    .frame(width: 300)
-                    .background(.regularMaterial)
-                
                 GeometryReader { geometry in
                     ZStack {
                         Color.platformBackground
@@ -88,22 +84,54 @@ struct TrackMapView: View {
                                     }
                                     .padding()
                                     #endif
+                                    
+                                    // Audio panel toggle for iPad/macOS
+                                    #if os(macOS)
+                                    Button {
+                                        withAnimation(.spring()) {
+                                            showAudioPanel.toggle()
+                                        }
+                                    } label: {
+                                        Label(
+                                            showAudioPanel ? "Hide Team Radio" : "Show Team Radio",
+                                            systemImage: "waveform.circle"
+                                        )
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .padding()
+                                    #endif
                                 }
                                 Spacer()
                             }
                         } else {
-                            ProgressView("Loading track map...")
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            VStack(spacing: 20) {
+                                F1LoadingView(message: viewModel?.loadingError ?? "Loading track map...", size: 60)
+                                
+                                if viewModel?.loadingError != nil {
+                                    Button("Retry") {
+                                        viewModel?.retryLoading()
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
                 }
+                
+                // Audio panel for macOS
+                #if os(macOS)
+                if showAudioPanel {
+                    DriverAudioPanel()
+                        .frame(width: 300)
+                        .background(.regularMaterial)
+                        .transition(.move(edge: .trailing))
+                }
+                #endif
             }
             #else
-            // iOS version - mobile optimized
-            NavigationStack {
-                VStack(spacing: 0) {
-                    // iOS Track Map Container
-                    ZStack {
+            // iOS version - mobile optimized, just map
+            ZStack {
                         Color.platformBackground
                         
                         if let viewModel = viewModel, viewModel.hasMapData {
@@ -124,49 +152,41 @@ struct TrackMapView: View {
                             // iOS-specific overlay controls
                             VStack {
                                 HStack {
-                                    // Map controls top-left
-                                    VStack(spacing: 8) {
-                                        Button {
-                                            withAnimation(.spring()) {
-                                                showDriversList.toggle()
-                                            }
-                                        } label: {
-                                            Image(systemName: "list.bullet")
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundStyle(.primary)
-                                                .frame(width: 44, height: 44)
-                                                .background(.ultraThinMaterial)
-                                                .clipShape(Circle())
-                                        }
-                                        
-                                        Button {
-                                            // Zoom to fit functionality
-                                        } label: {
-                                            Image(systemName: "scope")
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundStyle(.primary)
-                                                .frame(width: 44, height: 44)
-                                                .background(.ultraThinMaterial)
-                                                .clipShape(Circle())
-                                        }
-                                    }
-                                    .padding(.leading)
-                                    
                                     Spacer()
                                     
-                                    // Session info top-right
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        if let sessionInfo = appEnvironment.liveSessionState.sessionInfo,
-                                           let sessionType = sessionInfo.type {
-                                            Text(sessionType)
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundStyle(.primary)
+                                    // Session info and audio toggle for iPad
+                                    HStack(spacing: 8) {
+                                        #if !os(macOS)
+                                        // Audio button for iPad
+                                        if UIDevice.current.userInterfaceIdiom == .pad {
+                                            Button {
+                                                withAnimation(.spring()) {
+                                                    showAudioPanel.toggle()
+                                                }
+                                            } label: {
+                                                Image(systemName: "waveform.circle")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundStyle(.primary)
+                                                    .frame(width: 44, height: 44)
+                                                    .background(.ultraThinMaterial)
+                                                    .clipShape(Circle())
+                                            }
                                         }
+                                        #endif
+                                        
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            if let sessionInfo = appEnvironment.liveSessionState.sessionInfo,
+                                               let sessionType = sessionInfo.type {
+                                                Text(sessionType)
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.primary)
+                                            }
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .padding(.trailing)
                                 }
                                 
@@ -182,40 +202,39 @@ struct TrackMapView: View {
                             
                         } else {
                             // iOS Loading state
-                            VStack(spacing: 16) {
-                                ProgressView()
-                                    .controlSize(.large)
+                            VStack(spacing: 20) {
+                                F1LoadingView(message: viewModel?.loadingError ?? "Loading track map...", size: 60)
                                 
-                                Text("Loading track map...")
-                                    .font(.headline)
-                                    .foregroundStyle(.secondary)
+                                if viewModel?.loadingError != nil {
+                                    Button("Retry") {
+                                        viewModel?.retryLoading()
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                }
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
-                    .sheet(isPresented: $showDriversList) {
-                        iOSDriversSheet(selectedDriver: $selectedDriver)
-                    }
-                }
-                .navigationTitle("Track Map")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        // Picture in Picture button
-                        Button {
-                            appEnvironment.pictureInPictureManager.togglePiP()
-                        } label: {
-                            Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
+                .sheet(isPresented: $showAudioPanel) {
+                    #if !os(macOS)
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        NavigationStack {
+                            TeamRadioView()
+                                .navigationTitle("Team Radio")
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbar {
+                                    ToolbarItem(placement: .topBarTrailing) {
+                                        Button("Done") {
+                                            showAudioPanel = false
+                                        }
+                                    }
+                                }
                         }
-                        
-                        Button {
-                            showDriversList = true
-                        } label: {
-                            Image(systemName: "person.3")
-                        }
+                        .presentationDetents([.medium, .large])
+                        .presentationDragIndicator(.visible)
                     }
+                    #endif
                 }
-            }
             #endif
         }
         .onAppear {
@@ -475,7 +494,17 @@ struct TrackMapView: View {
     }
 }
 
-// MARK: - Driver List Sidebar
+// MARK: - Driver Audio Panel
+
+struct DriverAudioPanel: View {
+    @Environment(AppEnvironment.self) private var appEnvironment
+    
+    var body: some View {
+        TeamRadioView()
+    }
+}
+
+// MARK: - Removed Driver List Sidebar (no longer needed)
 
 struct DriverListSidebar: View {
     @Environment(AppEnvironment.self) private var appEnvironment
@@ -784,54 +813,7 @@ struct iOSDriverInfoPanel: View {
     }
 }
 
-struct iOSDriversSheet: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
-    @Binding var selectedDriver: String?
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 1) {
-                    if !appEnvironment.liveSessionState.driverList.isEmpty,
-                       let timingData = appEnvironment.liveSessionState.timingData {
-                        let drivers = appEnvironment.liveSessionState.driverList
-                        ForEach(sortedDrivers(drivers: drivers, timingData: timingData), id: \.racingNumber) { driver in
-                            iOSDriverRowView(driver: driver, selectedDriver: $selectedDriver)
-                                .onTapGesture {
-                                    selectedDriver = driver.racingNumber
-                                    dismiss()
-                                }
-                        }
-                    } else {
-                        ForEach(0..<20, id: \.self) { _ in
-                            TrackMapSkeletonDriverRow()
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Drivers")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-    
-    private func sortedDrivers(drivers: [String: Driver], timingData: TimingData) -> [Driver] {
-        return drivers.values.sorted { driver1, driver2 in
-            let pos1 = driver1.line
-            let pos2 = driver2.line
-            return pos1 < pos2
-        }
-    }
-}
+// Removed iOSDriversSheet as we're not showing driver list anymore
 
 struct iOSDriverRowView: View {
     @Environment(AppEnvironment.self) private var appEnvironment

@@ -24,6 +24,7 @@ final class TrackMapViewModel {
     private(set) var rotatedPoints: [TrackPosition] = []
     private(set) var rotatedCorners: [RotatedCorner] = []
     private(set) var finishLinePosition: TrackPosition?
+    private(set) var loadingError: String?
     
     // Update tracker to force view refreshes
     private(set) var lastUpdateTime: Date = Date()
@@ -50,6 +51,19 @@ final class TrackMapViewModel {
         self.appEnvironment = appEnvironment
         startUpdating()
         loadTrackMap()
+        
+        // Retry loading when session info becomes available
+        Task {
+            for await _ in Timer.publish(every: 5, on: .main, in: .default).autoconnect().values {
+                if trackMap == nil && appEnvironment.liveSessionState.sessionInfo != nil {
+                    loadTrackMap()
+                }
+            }
+        }
+    }
+    
+    func retryLoading() {
+        loadTrackMap()
     }
     
     // deinit not needed without timer
@@ -58,7 +72,16 @@ final class TrackMapViewModel {
     
     private func loadTrackMap() {
         Task {
-            guard let circuitKey = appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key else {
+            // Clear any previous error
+            self.loadingError = nil
+            
+            guard let sessionInfo = appEnvironment.liveSessionState.sessionInfo else {
+                self.loadingError = "Waiting for session data..."
+                return
+            }
+            
+            guard let circuitKey = sessionInfo.meeting?.circuit.key else {
+                self.loadingError = "No circuit information available"
                 return
             }
             
@@ -66,9 +89,11 @@ final class TrackMapViewModel {
                 let map = try await mapService.fetchMap(for: circuitKey)
                 await MainActor.run {
                     self.trackMap = map
+                    self.loadingError = nil
                     self.processMapData()
                 }
             } catch {
+                self.loadingError = "Failed to load track map"
                 print("Failed to load map: \(error)")
             }
         }

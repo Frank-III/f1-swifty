@@ -152,7 +152,6 @@ struct MacOSDashboardContent: View {
                 }
                 .padding(.vertical)
             }
-            .modifier(PlatformEnhancedScrollingModifier())
             .navigationTitle("Dashboard")
             .navigationSubtitle(sessionSubtitle)
             .toolbar {
@@ -486,6 +485,7 @@ struct TrackMapFullScreenView: View {
             TrackMapView()
                 .ignoresSafeArea()
                 .navigationTitle("Track Map")
+                .platformNavigationGlass()
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") {

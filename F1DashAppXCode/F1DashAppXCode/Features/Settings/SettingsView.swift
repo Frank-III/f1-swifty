@@ -101,7 +101,9 @@ public struct SettingsView: View {
                     .foregroundStyle(.red)
                 }
             }
+            #if !os(macOS)
             .navigationTitle("Settings")
+            #endif
         }
         #endif
     }

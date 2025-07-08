@@ -50,6 +50,7 @@ struct RacePredictionSheetView: View {
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .platformNavigationGlass()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -301,6 +302,7 @@ struct TeamPredictionRow: View {
         .modifier(PlatformGlassCardModifier())
     }
 }
+
 
 #Preview {
     RacePredictionSheetView()

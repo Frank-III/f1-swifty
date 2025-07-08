@@ -122,7 +122,7 @@ struct DashboardView: View {
                 }
             }
         }
-        .frame(width: 600, height: 600)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.platformSecondaryBackground)
     }
 }
@@ -141,6 +141,11 @@ struct DashboardHeader: View {
                 Text("F1 Dash")
                     .font(.headline)
             }
+            
+            Spacer()
+            
+            // Compact weather info
+            CompactHeaderWeatherView()
             
             Spacer()
             

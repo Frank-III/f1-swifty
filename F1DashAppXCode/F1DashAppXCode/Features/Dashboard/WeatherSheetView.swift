@@ -102,6 +102,7 @@ struct WeatherSheetView: View {
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .platformNavigationGlass()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

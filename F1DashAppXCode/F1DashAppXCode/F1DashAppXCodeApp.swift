@@ -100,6 +100,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @MainActor
     @objc func openSettings() {
+        // Don't open settings window if dashboard window is open
+        if let appEnvironment = appEnvironment, appEnvironment.isDashboardWindowOpen {
+            return
+        }
+        
         if #available(macOS 14.0, *) {
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         } else {

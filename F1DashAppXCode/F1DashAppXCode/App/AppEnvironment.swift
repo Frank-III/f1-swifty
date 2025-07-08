@@ -31,6 +31,7 @@ public final class AppEnvironment {
     private(set) var connectionStatus: ConnectionStatus = .disconnected
     private(set) var schedule: [RaceRound] = []
     private(set) var scheduleLoadingStatus: LoadingStatus = .idle
+    var isDashboardWindowOpen: Bool = false
     
     // MARK: - Initialization
     
