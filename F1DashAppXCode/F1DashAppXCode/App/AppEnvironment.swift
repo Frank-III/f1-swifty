@@ -24,6 +24,7 @@ public final class AppEnvironment {
     let liveActivityManager: LiveActivityManager?
     private var notificationManager: NotificationManager?
     let soundManager: SoundManager
+    let racePreferences: RacePreferences
     
     // MARK: - State
     
@@ -41,6 +42,7 @@ public final class AppEnvironment {
         self.pictureInPictureManager = PictureInPictureManager()
         self.liveSessionState = LiveSessionState()
         self.soundManager = SoundManager()
+        self.racePreferences = RacePreferences()
         
         // Initialize managers only on iOS
         #if !os(macOS)

@@ -64,7 +64,7 @@ public struct MainTabView: View {
                     case 1:
                         StandingsView()
                     case 2:
-                        ScheduleView()
+                        EnhancedScheduleView()
                     case 3:
                         SettingsView()
                     default:
@@ -92,7 +92,7 @@ public struct MainTabView: View {
                     }
                     .tag(1)
                 
-                ScheduleView()
+                EnhancedScheduleView()
                     .tabItem {
                         Label("Schedule", systemImage: "calendar")
                     }

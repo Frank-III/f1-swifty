@@ -318,8 +318,11 @@ struct MacOSScheduleView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     
     var body: some View {
-        ScheduleView()
-            .navigationSubtitle(sessionSubtitle)
+        NavigationStack {
+            EnhancedScheduleView()
+                .navigationTitle("Race Schedule")
+                .navigationSubtitle(sessionSubtitle)
+        }
     }
     
     private var sessionSubtitle: String {

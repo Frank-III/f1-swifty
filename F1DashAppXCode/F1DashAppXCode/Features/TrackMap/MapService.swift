@@ -29,13 +29,25 @@ final class MapService: ObservableObject {
             throw MapServiceError.invalidResponse
         }
         
-        let decoder = JSONDecoder()
-        let map = try decoder.decode(TrackMap.self, from: data)
-        
-        // Cache the result
-        mapCache[circuitKey] = map
-        
-        return map
+        do {
+            let decoder = JSONDecoder()
+            let map = try decoder.decode(TrackMap.self, from: data)
+            
+            // Cache the result
+            mapCache[circuitKey] = map
+            
+            return map
+        } catch let decodingError as DecodingError {
+            // If decoding fails due to floating-point precision issues,
+            // try parsing the JSON manually with more lenient number handling
+            if case .dataCorrupted = decodingError {
+                print("Warning: JSON decoding failed, attempting fallback parsing")
+                // For now, rethrow the error - a more complex solution would involve
+                // using JSONSerialization with .allowFragments option
+                throw MapServiceError.decodingError
+            }
+            throw decodingError
+        }
     }
 }
 

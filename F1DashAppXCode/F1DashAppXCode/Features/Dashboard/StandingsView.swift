@@ -16,29 +16,47 @@ struct StandingsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let prediction = championshipPrediction {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Drivers Championship
-                    DriversStandingsSection(prediction: prediction)
-                    
-                    Divider()
-                    
-                    // Constructors Championship
-                    ConstructorsStandingsSection(prediction: prediction)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let prediction = championshipPrediction {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Drivers Championship
+                            DriversStandingsSection(prediction: prediction)
+                            
+                            Divider()
+                            
+                            // Constructors Championship
+                            ConstructorsStandingsSection(prediction: prediction)
+                        }
+                    } else {
+                        ContentUnavailableView(
+                            "Championship Data Unavailable",
+                            systemImage: "trophy",
+                            description: Text("Championship predictions will appear here during a race session")
+                        )
+                        .frame(height: 400)
+                    }
                 }
-            } else {
-                ContentUnavailableView(
-                    "Championship Data Unavailable",
-                    systemImage: "trophy",
-                    description: Text("Championship predictions will appear here during a race session")
-                )
-                .frame(height: 200)
+                .padding()
+            }
+            .navigationTitle("Championship Standings")
+            #if !os(macOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    if championshipPrediction != nil {
+                        Menu {
+                            Label("Based on current race positions", systemImage: "info.circle")
+                                .disabled(true)
+                        } label: {
+                            Image(systemName: "info.circle")
+                        }
+                    }
+                }
             }
         }
-        .padding()
-        .background(Color.platformBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
