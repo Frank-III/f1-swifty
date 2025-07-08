@@ -280,20 +280,15 @@ extension SignalRClientActor {
 
         // Handle initial state messages (R field)
         if let initialData = json["R"] as? [String: Any] {
-          // Process each topic in the initial data
-          for (topic, data) in initialData {
-            if topic == "_kf" { continue }  // Skip metadata
-
-            // Create a message in the format DataProcessingActor expects
-            let message: [String: Any] = ["R": data]
-            if let messageData = try? JSONSerialization.data(withJSONObject: message) {
-              let rawMessage = RawMessage(
-                topic: topic,
-                data: messageData,
-                timestamp: Date()
-              )
-              await messageHandler?(rawMessage)
-            }
+          // Send the entire initial state as one message for simulation
+          let message: [String: Any] = ["R": initialData]
+          if let messageData = try? JSONSerialization.data(withJSONObject: message) {
+            let rawMessage = RawMessage(
+              topic: "simulation",  // Special topic for full state
+              data: messageData,
+              timestamp: Date()
+            )
+            await messageHandler?(rawMessage)
           }
         }
 

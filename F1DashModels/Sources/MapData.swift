@@ -7,6 +7,12 @@
 
 import Foundation
 
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
+
 public struct TrackMap: Codable {
     public let corners: [Corner]
     public let marshalLights: [Corner]
@@ -147,8 +153,8 @@ public extension TrackMap {
         centerX: Double,
         centerY: Double
     ) -> TrackPosition {
-        let cos = Darwin.cos(radians(from: angle))
-        let sin = Darwin.sin(radians(from: angle))
+        let cos = cos(radians(from: angle))
+        let sin = sin(radians(from: angle))
         
         let translatedX = x - centerX
         let translatedY = y - centerY

@@ -114,6 +114,9 @@ private func setupDataPipeline(
   await dataProcessor.setStateUpdateHandler { stateUpdate in
     await sessionStateCache.applyUpdate(stateUpdate)
   }
+  await dataProcessor.setInitialStateHandler { initialState in
+    await sessionStateCache.setInitialState(initialState)
+  }
   await signalRClient.setMessageHandler { rawMessage in
     // Process for state
     await dataProcessor.processMessage(rawMessage)

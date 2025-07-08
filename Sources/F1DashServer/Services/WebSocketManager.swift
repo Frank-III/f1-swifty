@@ -131,7 +131,7 @@ public struct WebSocketManager: Sendable {
     ) async {
         do {
             for await update in updateStream {
-                let message = WebSocketMessage.stateUpdate(update.updates)
+                let message = WebSocketMessage.stateUpdate(SendableJSON(update.updates))
                 
                 let encoder = JSONEncoder()
                 encoder.dateEncodingStrategy = .iso8601

@@ -9,7 +9,12 @@
       "Bash(xcodebuild:*)",
       "Bash(swift package:*)",
       "Bash(find:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift build --product F1DashServer)",
+      "Bash(curl:*)",
+      "Bash(echo)",
+      "Bash(grep:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

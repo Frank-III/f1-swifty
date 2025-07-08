@@ -155,12 +155,13 @@ public struct APIRouter: Sendable {
         sessionStateCache: SessionStateCache
     ) async throws -> Response {
         
-        let currentState = await sessionStateCache.getCurrentState()
+        // Get the raw state as JSONValue instead of trying to decode to F1State
+        let jsonValue = await sessionStateCache.getCurrentStateAsJSON()
         
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         
-        let data = try encoder.encode(currentState)
+        let data = try encoder.encode(jsonValue)
         
         return Response(
             status: .ok,

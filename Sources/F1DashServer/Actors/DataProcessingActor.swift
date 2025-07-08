@@ -10,12 +10,18 @@ actor DataProcessingActor {
 
   private let logger = Logger(label: "DataProcessingActor")
   private var stateUpdateHandler: ((StateUpdate) async -> Void)?
+  private var initialStateHandler: ((F1State) async -> Void)?
 
   // MARK: - Public Interface
 
   /// Set the handler for processed state updates
   func setStateUpdateHandler(_ handler: @escaping (StateUpdate) async -> Void) {
     stateUpdateHandler = handler
+  }
+  
+  /// Set the handler for initial state
+  func setInitialStateHandler(_ handler: @escaping (F1State) async -> Void) {
+    initialStateHandler = handler
   }
 
   /// Process a raw message from SignalR
@@ -113,11 +119,27 @@ actor DataProcessingActor {
           }
         }
 
-        return ProcessedMessage(
-          topic: "initial",
-          content: transformedState,
-          timestamp: timestamp
-        )
+        // Try to decode as F1State for initial full state
+        do {
+          let stateData = try JSONSerialization.data(withJSONObject: transformedState)
+          let decoder = JSONDecoder()
+          let initialState = try decoder.decode(F1State.self, from: stateData)
+          
+          // Send via initial state handler
+          await initialStateHandler?(initialState)
+          
+          logger.info("Successfully processed initial F1State")
+          return nil  // Don't send as regular update
+          
+        } catch {
+          // If decoding fails, send as regular update
+          logger.warning("Failed to decode as F1State, sending as regular update: \(error)")
+          return ProcessedMessage(
+            topic: "initial",
+            content: transformedState,
+            timestamp: timestamp
+          )
+        }
       }
     }
 
@@ -225,8 +247,20 @@ actor DataProcessingActor {
         throw ProcessingError.invalidBase64
     }
 
-    // Decompress using SWCompression (cross-platform)
-    let decompressedData = try ZlibArchive.unarchive(archive: compressedData)
+    // Try DEFLATE decompression first (matching Rust implementation)
+    let decompressedData: Data
+    do {
+        decompressedData = try Deflate.decompress(data: compressedData)
+    } catch {
+        // If DEFLATE fails, try ZLIB as fallback
+        logger.debug("DEFLATE decompression failed, trying ZLIB: \(error)")
+        do {
+            decompressedData = try ZlibArchive.unarchive(archive: compressedData)
+        } catch {
+            logger.error("Both DEFLATE and ZLIB decompression failed")
+            throw ProcessingError.decompressionFailed
+        }
+    }
 
     // Parse JSON
     guard let jsonObject = try JSONSerialization.jsonObject(with: decompressedData) as? [String: Any] else {

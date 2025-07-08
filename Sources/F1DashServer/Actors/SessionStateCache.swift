@@ -9,6 +9,7 @@ actor SessionStateCache {
     // MARK: - State
     
     private var currentState = F1State()
+    private var currentStateDict: [String: Any] = [:]  // Keep dictionary representation for merging
     private let logger = Logger(label: "SessionStateCache")
     private var subscribers: [UUID: (StateUpdate) async -> Void] = [:]
     private var fullStateSubscribers: [UUID: (F1State) async -> Void] = [:]
@@ -39,10 +40,58 @@ actor SessionStateCache {
     
     // MARK: - Public Interface
     
+    /// Get the raw state dictionary as JSONValue (for API responses when F1State decoding fails)
+    func getCurrentStateAsJSON() -> JSONValue {
+        return JSONValue(from: currentStateDict)
+    }
+    
     /// Get the current complete F1 state
     func getCurrentState() -> F1State {
-        logger.debug("Getting current state - has timing data: \(currentState.timingData != nil), driver count: \(currentState.timingData?.lines.count ?? 0)")
-        return currentState
+        // If state dictionary is empty, return empty F1State
+        if currentStateDict.isEmpty {
+            logger.debug("State dictionary is empty, returning empty F1State")
+            return F1State()
+        }
+        
+        // Debug log to see what's in the dictionary
+        logger.debug("Current state dictionary keys: \(currentStateDict.keys.sorted())")
+        if let driverList = currentStateDict["driverList"] as? [String: Any] {
+            logger.debug("DriverList has \(driverList.count) drivers")
+            if let driver1 = driverList["1"] as? [String: Any] {
+                logger.debug("Driver 1 line field type: \(type(of: driver1["line"] ?? "nil")), value: \(driver1["line"] ?? "nil")")
+            }
+        }
+        
+        // Try to decode the current state dictionary to F1State
+        // If it fails, return the last successfully decoded state
+        do {
+            let data = try JSONSerialization.data(withJSONObject: currentStateDict)
+            let decoder = JSONDecoder()
+            let decodedState = try decoder.decode(F1State.self, from: data)
+            currentState = decodedState
+            logger.debug("Getting current state - has timing data: \(decodedState.timingData != nil), driver count: \(decodedState.timingData?.lines.count ?? 0)")
+            return decodedState
+        } catch {
+            logger.warning("Failed to decode current state dictionary, returning last known good state: \(error)")
+            logger.debug("Getting cached state - has timing data: \(currentState.timingData != nil), driver count: \(currentState.timingData?.lines.count ?? 0)")
+            
+            // If we have data but can't decode it, return a partial state with what we can
+            if !currentStateDict.isEmpty {
+                logger.info("Returning partially decoded state from dictionary")
+                var partialState = F1State()
+                
+                // Try to decode individual components that we can
+                if let driverListData = try? JSONSerialization.data(withJSONObject: currentStateDict["driverList"] ?? [:]),
+                   let driverList = try? JSONDecoder().decode([String: Driver].self, from: driverListData) {
+                    partialState.driverList = driverList
+                }
+                
+                // Return partial state for now
+                return partialState
+            }
+            
+            return currentState
+        }
     }
     
     /// Subscribe to state updates
@@ -97,6 +146,36 @@ actor SessionStateCache {
         logger.debug("Unsubscribed full state subscriber: \(id)")
     }
     
+    /// Set the complete initial state
+    func setInitialState(_ state: F1State) async {
+        logger.info("Setting initial F1 state")
+        
+        // Convert F1State to dictionary
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(state)
+            currentStateDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+            currentState = state
+            
+            updateCount = 0
+            lastUpdate = Date()
+            
+            logger.info("Initial state set with keys: \(currentStateDict.keys.joined(separator: ", "))")
+            
+            // Notify full state subscribers
+            for subscriber in fullStateSubscribers.values {
+                await subscriber(state)
+            }
+            
+            // Persist initial state if needed
+            if persistenceEnabled {
+                await persistInitialState()
+            }
+        } catch {
+            logger.error("Failed to set initial state: \(error)")
+        }
+    }
+    
     /// Apply a state update to the current state
     func applyUpdate(_ update: StateUpdate) async {
         updateCount += 1
@@ -109,6 +188,7 @@ actor SessionStateCache {
         if await shouldResetState(update) {
             logger.info("Detected session restart, resetting state")
             currentState = F1State()
+            currentStateDict = [:]
         }
         
         // Apply updates to current state
@@ -133,6 +213,7 @@ actor SessionStateCache {
         logger.info("Resetting session state")
         
         currentState = F1State()
+        currentStateDict = [:]
         updateCount = 0
         lastUpdate = Date()
         
@@ -178,32 +259,22 @@ actor SessionStateCache {
     }
     
     private func mergeUpdate(_ update: StateUpdate) async {
-        do {
-            // Convert current state to dictionary for merging
-            let encoder = JSONEncoder()
-            let decoder = JSONDecoder()
-            
-            logger.debug("Merging update with keys: \(update.updates.dictionary.keys.joined(separator: ", "))")
-            
-            let stateData = try encoder.encode(currentState)
-            var stateDict = try JSONSerialization.jsonObject(with: stateData) as? [String: Any] ?? [:]
-            
-            logger.debug("Current state keys before merge: \(stateDict.keys.joined(separator: ", "))")
-            
-            // Merge the update
-            DataTransformation.mergeStates(&stateDict, with: update.updates.dictionary)
-            
-            logger.debug("State keys after merge: \(stateDict.keys.joined(separator: ", "))")
-            
-            // Convert back to F1State
-            let mergedData = try JSONSerialization.data(withJSONObject: stateDict)
-            currentState = try decoder.decode(F1State.self, from: mergedData)
-            
-            logger.debug("Successfully merged state update")
-            
-        } catch {
-            logger.error("Failed to merge state update: \(error)")
-            logger.error("Update dictionary: \(update.updates.dictionary)")
+        let updateKeys = update.updates.dictionary.keys.joined(separator: ", ")
+        logger.debug("Merging update with keys: \(updateKeys)")
+        
+        // Simply merge the update into our state dictionary
+        DataTransformation.mergeStates(&currentStateDict, with: update.updates.dictionary)
+        
+        let stateKeys = currentStateDict.keys.sorted().joined(separator: ", ")
+        logger.info("State dictionary now has \(currentStateDict.count) keys: \(stateKeys)")
+        
+        // Sample some data to verify it's populated
+        if let driverList = currentStateDict["driverList"] as? [String: Any] {
+            logger.info("DriverList has \(driverList.count) drivers")
+        }
+        if let timingData = currentStateDict["timingData"] as? [String: Any],
+           let lines = timingData["lines"] as? [String: Any] {
+            logger.info("TimingData has \(lines.count) driver lines")
         }
     }
     
@@ -234,6 +305,10 @@ actor SessionStateCache {
     }
     
     private func isEmpty() -> Bool {
+        // Check the dictionary state, not the cached decoded state
+        if !currentStateDict.isEmpty {
+            return false
+        }
         return currentState.driverList?.isEmpty != false &&
                currentState.timingData?.lines.isEmpty != false
     }

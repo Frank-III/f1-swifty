@@ -133,132 +133,66 @@ public struct RawMessage: Sendable, Codable {
 /// Processed message after transformation
 public struct ProcessedMessage: Sendable, Codable {
     public let topic: String
-    public let content: SendableJSON
+    public let content: JSONValue
     public let timestamp: Date
     
     public init(topic: String, content: [String: Any], timestamp: Date = Date()) {
         self.topic = topic
-        self.content = SendableJSON(content)
+        self.content = JSONValue(from: content)
+        self.timestamp = timestamp
+    }
+    
+    public init(topic: String, content: JSONValue, timestamp: Date = Date()) {
+        self.topic = topic
+        self.content = content
         self.timestamp = timestamp
     }
 }
 
 /// State update for incremental changes
 public struct StateUpdate: Sendable, Codable {
-    public let updates: SendableJSON
+    public let updates: JSONValue
     public let timestamp: Date
     
     public init(updates: [String: Any], timestamp: Date = Date()) {
-        self.updates = SendableJSON(updates)
+        self.updates = JSONValue(from: updates)
+        self.timestamp = timestamp
+    }
+    
+    public init(updates: JSONValue, timestamp: Date = Date()) {
+        self.updates = updates
         self.timestamp = timestamp
     }
 }
 
 /// Sendable wrapper for JSON data
 public struct SendableJSON: Sendable, Codable {
-    private let data: Data
+    public let value: JSONValue
     
     public init(_ dictionary: [String: Any]) {
-        do {
-            self.data = try JSONSerialization.data(withJSONObject: dictionary)
-        } catch {
-            self.data = Data()
-        }
+        self.value = JSONValue(from: dictionary)
     }
     
-  public init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let dictionary = try container.decode([String: AnyDecodable].self)
-        let anyDict = dictionary.mapValues { $0.value }
-        self.data = try JSONSerialization.data(withJSONObject: anyDict)
+    public init(_ value: JSONValue) {
+        self.value = value
     }
     
-  public func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        let jsonObject = try JSONSerialization.jsonObject(with: data)
-        if let dictionary = jsonObject as? [String: Any] {
-            let encodableDict = dictionary.mapValues(AnyEncodable.init)
-            try container.encode(encodableDict)
-        } else {
-            try container.encodeNil()
-        }
+    public init(from decoder: any Decoder) throws {
+        self.value = try JSONValue(from: decoder)
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        try value.encode(to: encoder)
     }
     
     /// Get the underlying dictionary
     public var dictionary: [String: Any] {
-        do {
-            let jsonObject = try JSONSerialization.jsonObject(with: data)
-            return jsonObject as? [String: Any] ?? [:]
-        } catch {
+        switch value {
+        case .object(let dict):
+            return dict.untypedDictionary
+        default:
             return [:]
         }
     }
 }
 
-// Extension to handle Any coding
-//extension Dictionary: @retroactive Codable where Key == String, Value == Any {
-//  public init(from decoder: any Decoder) throws {
-//        let container = try decoder.singleValueContainer()
-//        let dictionary = try container.decode([String: AnyDecodable].self)
-//        self = dictionary.mapValues { $0.value }
-//    }
-//    
-//  public func encode(to encoder: any Encoder) throws {
-//        var container = encoder.singleValueContainer()
-//        let dictionary = self.mapValues(AnyEncodable.init)
-//        try container.encode(dictionary)
-//    }
-//}
-
-private struct AnyEncodable: Encodable {
-    let value: Any
-    
-    init(_ value: Any) {
-        self.value = value
-    }
-    
-  func encode(to encoder: any Encoder) throws {
-        var container = encoder.singleValueContainer()
-        
-        switch value {
-        case let bool as Bool:
-            try container.encode(bool)
-        case let int as Int:
-            try container.encode(int)
-        case let double as Double:
-            try container.encode(double)
-        case let string as String:
-            try container.encode(string)
-        case let array as [Any]:
-            try container.encode(array.map(AnyEncodable.init))
-        case let dict as [String: Any]:
-            try container.encode(dict.mapValues(AnyEncodable.init))
-        default:
-            try container.encodeNil()
-        }
-    }
-}
-
-private struct AnyDecodable: Decodable {
-    let value: Any
-    
-  init(from decoder: any Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        
-        if let bool = try? container.decode(Bool.self) {
-            value = bool
-        } else if let int = try? container.decode(Int.self) {
-            value = int
-        } else if let double = try? container.decode(Double.self) {
-            value = double
-        } else if let string = try? container.decode(String.self) {
-            value = string
-        } else if let array = try? container.decode([AnyDecodable].self) {
-            value = array.map { $0.value }
-        } else if let dict = try? container.decode([String: AnyDecodable].self) {
-            value = dict.mapValues { $0.value }
-        } else {
-            value = NSNull()
-        }
-    }
-}
