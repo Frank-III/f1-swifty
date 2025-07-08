@@ -28,12 +28,14 @@ struct F1DashAppXCodeApp: App {
         
         // Main window scene (hidden by default)
         WindowGroup("F1 Dashboard", id: "dashboard") {
-            DashboardView()
-                .environment(appEnvironment)
+          MainTabView()
+              .environment(appEnvironment)
+//            MacOSDashboardView()
+//                .environment(appEnvironment)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        .defaultSize(width: 400, height: 600)
+//        .defaultSize(width: 1200, height: 800)
         .defaultPosition(.center)
         .commands {
             commands
@@ -41,7 +43,7 @@ struct F1DashAppXCodeApp: App {
         
         // Menu bar extra
         MenuBarExtra("F1 Dash", systemImage: "flag.checkered.circle.fill") {
-            PopoverDashboardView()
+            SimplePopoverView()
                 .environment(appEnvironment)
                 .onAppear {
                     // Set the app environment in the delegate when the menu bar extra appears
@@ -105,40 +107,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    private var dashboardWindow: NSWindow?
+    
     @MainActor
     @objc func showDashboard() {
         // Activate the app first
         NSApp.activate(ignoringOtherApps: true)
         
-        // Look for existing dashboard window
+        // Check if we already have a dashboard window
+        if let existingWindow = dashboardWindow {
+            existingWindow.makeKeyAndOrderFront(nil)
+            existingWindow.orderFrontRegardless()
+            
+            // If window was closed, recreate it
+            if !existingWindow.isVisible {
+                createDashboardWindow()
+            }
+            return
+        }
+        
+        // Look for existing dashboard window by title
         if let dashboardWindow = NSApp.windows.first(where: { window in
-            window.title.contains("F1 Dashboard")
+            window.title == "F1 Dashboard"
         }) {
+            self.dashboardWindow = dashboardWindow
             dashboardWindow.makeKeyAndOrderFront(nil)
             dashboardWindow.orderFrontRegardless()
             return
         }
         
-        // If no existing window, use openWindow environment action
+        // Create new window if none exists
+        createDashboardWindow()
+    }
+    
+    @MainActor
+    private func createDashboardWindow() {
         if #available(macOS 13.0, *) {
-            // Use the SwiftUI openWindow environment action
-            // This will properly create the window using the WindowGroup definition
             Task { @MainActor in
                 // Force the app to show in dock temporarily to create window
                 NSApp.setActivationPolicy(.regular)
                 
-                // Use the newer openWindow API through the environment
-                // Since we can't directly access the environment action here,
-                // we'll create the window manually but with proper SwiftUI integration
                 if let env = appEnvironment {
-                    let dashboardView = DashboardView()
+                    let dashboardView = MainTabView()
                         .environment(env)
                     
                     let hostingController = NSHostingController(rootView: dashboardView)
                     let window = NSWindow(contentViewController: hostingController)
                     
                     window.title = "F1 Dashboard"
-                    window.setContentSize(NSSize(width: 400, height: 600))
+                    window.setContentSize(NSSize(width: 1200, height: 800))
                     window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
                     window.titlebarAppearsTransparent = true
                     window.titleVisibility = .hidden
@@ -147,6 +164,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     
                     // Store reference to prevent deallocation
                     window.isReleasedWhenClosed = false
+                    
+                    // Keep reference to the window
+                    self.dashboardWindow = window
                 }
                 
                 // Set back to accessory after window creation

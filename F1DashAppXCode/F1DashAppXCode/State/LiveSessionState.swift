@@ -27,6 +27,9 @@ final class LiveSessionState {
     private(set) var timingStats: TimingStats?
     private(set) var championshipPrediction: ChampionshipPrediction?
     
+    // Track last race control message count for chime detection
+    private var lastRaceControlMessageCount: Int = 0
+    
     // MARK: - Computed Properties
     
     var sortedDrivers: [Driver] {
@@ -134,6 +137,14 @@ final class LiveSessionState {
         } catch {
             print("Failed to apply state update: \(error)")
         }
+    }
+    
+    // Returns true if new race control messages were added
+    func checkForNewRaceControlMessages() -> Bool {
+        let currentCount = raceControlMessages?.messages.count ?? 0
+        let hasNewMessages = currentCount > lastRaceControlMessageCount
+        lastRaceControlMessageCount = currentCount
+        return hasNewMessages
     }
     
     private func createCurrentF1State() -> F1State {

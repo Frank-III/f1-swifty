@@ -9,12 +9,14 @@ import SwiftUI
 import F1DashModels
 
 struct CarMetricsView: View {
+    @Environment(AppEnvironment.self) private var appEnvironment
     let carData: CarDataChannels?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Car Telemetry")
-                .font(.headline)
+        if appEnvironment.settingsStore.showCarMetrics {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Car Telemetry")
+                    .font(.headline)
             
             if let data = carData {
                 VStack(spacing: 12) {
@@ -44,6 +46,9 @@ struct CarMetricsView: View {
                 )
                 .frame(height: 100)
             }
+        }
+        } else {
+            EmptyView()
         }
     }
 }

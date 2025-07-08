@@ -87,7 +87,7 @@ public struct IntervalToPositionAhead: Sendable, Codable {
 }
 
 /// Sector timing information
-public struct Sector: Sendable, Codable {
+public struct Sector: Sendable, Codable, Hashable, Equatable {
     public let stopped: Bool
     public let value: String
     public let previousValue: String?
@@ -116,7 +116,7 @@ public struct Sector: Sendable, Codable {
 }
 
 /// Segment within a sector
-public struct Segment: Sendable, Codable {
+public struct Segment: Sendable, Codable, Equatable, Hashable {
     public let status: Int
     
     public init(status: Int) {

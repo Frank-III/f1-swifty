@@ -9,32 +9,32 @@ import SwiftUI
 
 extension View {
     /// Applies a standard card style with padding, background, and rounded corners
-    func cardStyle(cornerRadius: CGFloat = 8, padding: CGFloat = 16) -> some View {
+    func cardStyle(cornerRadius: CGFloat = 8, padding: CGFloat = 16, oledMode: Bool = false) -> some View {
         self
             .padding(padding)
-            .background(Color.platformBackground)
+            .background(Color.dynamicBackground(oledMode: oledMode))
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
     
     /// Applies a secondary card style with lighter background
-    func secondaryCardStyle(cornerRadius: CGFloat = 8, padding: CGFloat = 16) -> some View {
+    func secondaryCardStyle(cornerRadius: CGFloat = 8, padding: CGFloat = 16, oledMode: Bool = false) -> some View {
         self
             .padding(padding)
-            .background(Color.platformSecondaryBackground)
+            .background(Color.dynamicSecondaryBackground(oledMode: oledMode))
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
     
     /// Applies a subtle background with rounded corners
-    func subtleBackground(cornerRadius: CGFloat = 8, opacity: Double = 0.1) -> some View {
+    func subtleBackground(cornerRadius: CGFloat = 8, opacity: Double = 0.1, oledMode: Bool = false) -> some View {
         self
-            .background(Color.gray.opacity(opacity))
+            .background(oledMode ? Color.black : Color.gray.opacity(opacity))
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
     
     /// Applies platform-appropriate grouped background
-    func groupedBackground(cornerRadius: CGFloat = 8) -> some View {
+    func groupedBackground(cornerRadius: CGFloat = 8, oledMode: Bool = false) -> some View {
         self
-            .background(Color.platformGroupedBackground)
+            .background(Color.dynamicGroupedBackground(oledMode: oledMode))
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
     
@@ -73,5 +73,23 @@ extension View {
         #else
         return self
         #endif
+    }
+}
+
+// MARK: - OLED Mode Modifier
+
+struct OledModeModifier: ViewModifier {
+    @Environment(AppEnvironment.self) private var appEnvironment
+    
+    func body(content: Content) -> some View {
+        content
+            .background(appEnvironment.settingsStore.oledMode ? Color.black : Color.clear)
+    }
+}
+
+extension View {
+    /// Applies OLED mode background based on the current setting
+    func oledModeBackground() -> some View {
+        self.modifier(OledModeModifier())
     }
 }

@@ -33,7 +33,7 @@ struct DashboardSectionPills: View {
             }
             
             // Section pills
-            ForEach([DashboardSection.all, .trackMap, .liveTiming, .trackStatus], id: \.self) { section in
+            ForEach([DashboardSection.all, .trackMap, .liveTiming, .raceControl], id: \.self) { section in
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         selectedSection = section

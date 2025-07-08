@@ -81,7 +81,8 @@ struct LapTimeDetailView: View {
             Divider()
             
             // Sector times
-            if let sectors = timing?.sectors, !sectors.isEmpty {
+            if appEnvironment.settingsStore.showDriversBestSectors,
+               let sectors = timing?.sectors, !sectors.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Sectors")
                         .font(.headline)
@@ -91,7 +92,8 @@ struct LapTimeDetailView: View {
                             SectorView(
                                 sectorNumber: index + 1,
                                 sector: sector,
-                                bestSector: timingStats?.bestSectors[safe: index]
+                                bestSector: timingStats?.bestSectors[safe: index],
+                                showMiniSectors: appEnvironment.settingsStore.showDriversMiniSectors
                             )
                         }
                     }
@@ -196,6 +198,7 @@ struct SectorView: View {
     let sectorNumber: Int
     let sector: Sector
     let bestSector: PersonalBestLapTime?
+    let showMiniSectors: Bool
     
     var body: some View {
         VStack(alignment: .center, spacing: 4) {
@@ -214,12 +217,14 @@ struct SectorView: View {
                     .foregroundStyle(.secondary)
             }
             
-            // Mini segments
-            HStack(spacing: 2) {
-                ForEach(Array(sector.segments.enumerated()), id: \.offset) { _, segment in
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(segmentColor(for: segment.status))
-                        .frame(width: 12, height: 3)
+            // Mini segments (if enabled)
+            if showMiniSectors {
+                HStack(spacing: 2) {
+                    ForEach(Array(sector.segments.enumerated()), id: \.offset) { _, segment in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(segmentColor(for: segment.status))
+                            .frame(width: 12, height: 3)
+                    }
                 }
             }
         }

@@ -23,6 +23,7 @@ public final class AppEnvironment {
     let systemPictureInPictureManager: SystemPictureInPictureManager?
     let liveActivityManager: LiveActivityManager?
     private var notificationManager: NotificationManager?
+    let soundManager: SoundManager
     
     // MARK: - State
     
@@ -39,6 +40,7 @@ public final class AppEnvironment {
         self.settingsStore = SettingsStore()
         self.pictureInPictureManager = PictureInPictureManager()
         self.liveSessionState = LiveSessionState()
+        self.soundManager = SoundManager()
         
         // Initialize managers only on iOS
         #if !os(macOS)
@@ -169,6 +171,11 @@ public final class AppEnvironment {
         
         // Check for notifications after state update
         notificationManager?.checkForNotifications()
+        
+        // Check for race control chime
+        if settingsStore.playRaceControlChime && liveSessionState.checkForNewRaceControlMessages() {
+            soundManager.playSound(.raceControlChime)
+        }
     }
 }
 
