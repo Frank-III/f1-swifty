@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  F1-Dash
 //
-//  Main tab view for iOS/iPadOS and macOS
+//  Main tab view for iOS/iPadOS
 //
 
 import SwiftUI
@@ -13,7 +13,8 @@ import AppKit
 
 
 public struct MainTabView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var selectedTab = 0
     @State private var showWeatherSheet = false
     @State private var showTrackMapFullScreen = false
@@ -53,7 +54,7 @@ public struct MainTabView: View {
                         StandingsView()
                             .navigationTitle("Standings")
                     case 2:
-                        ScheduleView()
+                      EnhancedScheduleView()
                             .navigationTitle("Schedule")
                     case 3:
                         DashboardSettingsView()
@@ -69,71 +70,92 @@ public struct MainTabView: View {
             #else
             // For iOS, use TabView
             TabView(selection: $selectedTab) {
-                UniversalDashboardView(
-                    selectedSection: $selectedDashboardSection,
-                    showWeatherSheet: $showWeatherSheet,
-                    showTrackMapFullScreen: $showTrackMapFullScreen
-                )
+                NavigationStack {
+                    UniversalDashboardView(
+                        selectedSection: $selectedDashboardSection,
+                        showWeatherSheet: $showWeatherSheet,
+                        showTrackMapFullScreen: $showTrackMapFullScreen
+                    )
+                }
                 .tabItem {
                     Label("Dashboard", systemImage: "speedometer")
                 }
                 .tag(0)
-                
-                StandingsView()
-                    .tabItem {
-                        Label("Standings", systemImage: "list.number")
-                    }
-                    .tag(1)
-                
-                ScheduleView()
-                    .tabItem {
-                        Label("Schedule", systemImage: "calendar")
-                    }
-                    .tag(2)
-                
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    .tag(3)
+            
+                NavigationStack {
+                    StandingsView()
+                }
+                .tabItem {
+                    Label("Standings", systemImage: "list.number")
+                }
+                .tag(1)
+            
+                NavigationStack {
+                    EnhancedScheduleView()
+                }
+                .tabItem {
+                    Label("Schedule", systemImage: "calendar")
+                }
+                .tag(2)
+            
+                NavigationStack {
+                    SettingsView()
+                }
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+                .tag(3)
             }
-            #endif
-        }
-        .modifier(iOS26TabAccessoryModifier(
-            appEnvironment: appEnvironment,
-            selectedTab: $selectedTab,
-            showWeatherSheet: $showWeatherSheet,
-            showTrackMapFullScreen: $showTrackMapFullScreen,
-            selectedDashboardSection: $selectedDashboardSection
-        ))
-//        .modifier(PlatformTabBarModifier())
-        .onAppear {
-            #if os(macOS)
-            appEnvironment.isDashboardWindowOpen = true
-            // Auto-close settings window when dashboard opens
-            closeSettingsWindow()
-            #endif
-        }
-        .onDisappear {
-            #if os(macOS)
-            appEnvironment.isDashboardWindowOpen = false
-            #endif
-        }
-        .task {
-            // Auto-connect when view appears
-            if appEnvironment.connectionStatus == .disconnected {
-                await appEnvironment.connect()
+            .modifier(iOS26TabAccessoryModifier(
+                appEnvironment: appEnvironment,
+                selectedTab: $selectedTab,
+                showWeatherSheet: $showWeatherSheet,
+                showTrackMapFullScreen: $showTrackMapFullScreen,
+                selectedDashboardSection: $selectedDashboardSection
+            ))
+//            .modifier(PlatformTabBarModifier())
+            .onAppear {
+                #if os(macOS)
+                appEnvironment.isDashboardWindowOpen = true
+                // Auto-close settings window when dashboard opens
+                closeSettingsWindow()
+                #endif
             }
-        }
-        .sheet(isPresented: $showWeatherSheet) {
-            WeatherSheetView()
-        }
-        #if os(iOS)
-        .fullScreenCover(isPresented: $showTrackMapFullScreen) {
-            NavigationStack {
-                TrackMapView()
-                    .navigationTitle("Track Map")
-                    .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                #if os(macOS)
+                appEnvironment.isDashboardWindowOpen = false
+                #endif
+            }
+            .task {
+                // Auto-connect when view appears
+                if appEnvironment.connectionStatus == .disconnected {
+                    await appEnvironment.connect()
+                }
+            }
+            .sheet(isPresented: $showWeatherSheet) {
+                WeatherSheetView()
+            }
+            #if os(iOS)
+            .fullScreenCover(isPresented: $showTrackMapFullScreen) {
+                NavigationStack {
+                    // TrackMapView()
+                    OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
+                        .navigationTitle("Track Map")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    showTrackMapFullScreen = false
+                                }
+                            }
+                        }
+                }
+            }
+            #else
+            .sheet(isPresented: $showTrackMapFullScreen) {
+                // TrackMapView()
+                OptimizedTrackMapView(circuitKey: appEnvironment.liveSessionState.sessionInfo?.meeting.circuit.key ?? "")
+                    .frame(minWidth: 600, minHeight: 400)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") {
@@ -142,20 +164,9 @@ public struct MainTabView: View {
                         }
                     }
             }
+            #endif
+            #endif // This closes the #else for iOS block that starts at line 69
         }
-        #else
-        .sheet(isPresented: $showTrackMapFullScreen) {
-            TrackMapView()
-                .frame(minWidth: 600, minHeight: 400)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") {
-                            showTrackMapFullScreen = false
-                        }
-                    }
-                }
-        }
-        #endif
     }
     
     #if os(macOS)
@@ -172,5 +183,6 @@ public struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .environment(AppEnvironment())
+        // .environment(AppEnvironment())
+        .environment(OptimizedAppEnvironment())
 }

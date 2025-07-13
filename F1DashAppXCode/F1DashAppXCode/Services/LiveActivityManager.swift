@@ -20,7 +20,8 @@ public final class LiveActivityManager {
     #if os(iOS)
     private var currentActivity: Activity<F1RaceActivityAttributes>?
     #endif
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // State
     private(set) var isLiveActivityActive = false
@@ -117,7 +118,8 @@ public final class LiveActivityManager {
     
     // MARK: - Private Methods
     #if !os(macOS)
-      private func createContentState(from environment: AppEnvironment) -> F1RaceActivityAttributes.ContentState {
+      // private func createContentState(from environment: AppEnvironment) -> F1RaceActivityAttributes.ContentState {
+      private func createContentState(from environment: OptimizedAppEnvironment) -> F1RaceActivityAttributes.ContentState {
           let sessionInfo = environment.liveSessionState.sessionInfo
           let timingData = environment.liveSessionState.timingData
           let trackStatus = environment.liveSessionState.trackStatus
@@ -207,7 +209,7 @@ public final class LiveActivityManager {
     private func getFavoriteDriver(
         from drivers: [String: Driver],
         timingData: TimingData?,
-        environment: AppEnvironment
+        environment: OptimizedAppEnvironment
     ) -> F1RaceActivityAttributes.ContentState.CompactDriverInfo? {
         // Find favorite driver
         guard let favoriteDriver = drivers.values.first(where: {

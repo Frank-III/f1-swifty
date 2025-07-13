@@ -79,6 +79,16 @@ public struct WebSocketManager: Sendable {
             let currentState = await sessionStateCache.getCurrentState()
             let message = WebSocketMessage.fullState(currentState)
             
+            // Log position data info
+            if let positionData = currentState.positionData {
+                Self.logger.info("Sending initial state with positionData: \(positionData.position?.count ?? 0) position entries")
+                if let firstEntry = positionData.position?.first {
+                    Self.logger.info("First position entry has \(firstEntry.entries.count) cars at timestamp \(firstEntry.timestamp)")
+                }
+            } else {
+                Self.logger.warning("Sending initial state WITHOUT positionData")
+            }
+            
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             
@@ -86,7 +96,7 @@ public struct WebSocketManager: Sendable {
             let text = String(data: data, encoding: .utf8) ?? ""
             
             try await outbound.write(.text(text))
-            Self.logger.debug("Sent initial state to client")
+            Self.logger.info("Sent initial state to client (size: \(data.count) bytes)")
             
         } catch {
             Self.logger.error("Failed to send initial state: \(error)")
@@ -133,6 +143,11 @@ public struct WebSocketManager: Sendable {
             for await update in updateStream {
                 let message = WebSocketMessage.stateUpdate(SendableJSON(update.updates))
                 
+                // Log if position data is in the update
+                if update.updates.dictionary.keys.contains("positionData") {
+                    Self.logger.info("Sending state update containing positionData")
+                }
+                
                 let encoder = JSONEncoder()
                 encoder.dateEncodingStrategy = .iso8601
                 
@@ -140,7 +155,7 @@ public struct WebSocketManager: Sendable {
                 let text = String(data: data, encoding: .utf8) ?? ""
                 
                 try await outbound.write(.text(text))
-                Self.logger.trace("Sent state update to client")
+                Self.logger.trace("Sent state update to client with keys: \(update.updates.dictionary.keys.joined(separator: ", "))")
             }
         } catch {
             Self.logger.error("Error sending updates: \(error)")

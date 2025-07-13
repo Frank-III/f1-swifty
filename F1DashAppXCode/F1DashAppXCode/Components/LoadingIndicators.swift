@@ -11,7 +11,6 @@ import SwiftUI
 
 #if os(iOS) || os(macOS)
 @available(iOS 26, macOS 26, *)
-@Animatable
 struct LoadingArc: Shape {
     var center: CGPoint
     var radius: CGFloat

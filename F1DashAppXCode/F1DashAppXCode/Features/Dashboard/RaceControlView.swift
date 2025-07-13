@@ -9,10 +9,18 @@ import SwiftUI
 import F1DashModels
 
 struct RaceControlView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    
+    // Add a state to force refreshes
+    @State private var refreshID = UUID()
     
     private var raceControlMessages: RaceControlMessages? {
-        appEnvironment.liveSessionState.raceControlMessages
+        let messages = appEnvironment.liveSessionState.raceControlMessages
+        print("RaceControlView: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
+        if messages == nil {
+            print("RaceControlView: Checking state keys: \(appEnvironment.liveSessionState.debugStateKeys)")
+        }
+        return messages
     }
     
     var body: some View {
@@ -20,7 +28,14 @@ struct RaceControlView: View {
             Label("Race Control", systemImage: "flag.2.crossed")
                 .font(.headline)
             
-            if let messages = raceControlMessages?.messages, !messages.isEmpty {
+            if appEnvironment.connectionStatus == .disconnected {
+                DisconnectedStateView(
+                    title: "Race Control Not Available",
+                    message: "Connect to live session to view messages",
+                    iconName: "flag.2.crossed.fill",
+                    minHeight: 100
+                )
+            } else if let messages = raceControlMessages?.messages, !messages.isEmpty {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(messages.sorted(by: { $0.utc > $1.utc }).prefix(10), id: \.utc) { message in
@@ -28,7 +43,7 @@ struct RaceControlView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 200)
+                .frame(minHeight: 100, maxHeight: 250)
             } else {
                 ContentUnavailableView(
                     "No Messages",
@@ -41,6 +56,14 @@ struct RaceControlView: View {
         .padding()
         .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .onAppear {
+            // Set up a timer to check for updates periodically
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+                print("RaceControlView Timer: Checking for updates...")
+                let messages = appEnvironment.liveSessionState.raceControlMessages
+                print("RaceControlView Timer: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
+            }
+        }
     }
 }
 
@@ -62,9 +85,9 @@ struct RaceControlMessageRow: View {
                 
                 Spacer()
                 
-                // Lap number if available
-                if let lap = message.lap {
-                    Text("Lap \(lap)")
+                // Lap indicator if available
+                if message.lap == true {
+                    Text("LAP")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -108,7 +131,8 @@ struct RaceControlMessageRow: View {
 // MARK: - Compact Race Control View
 
 struct CompactRaceControlView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var latestMessage: RaceControlMessage? {
         appEnvironment.liveSessionState.latestRaceControlMessage

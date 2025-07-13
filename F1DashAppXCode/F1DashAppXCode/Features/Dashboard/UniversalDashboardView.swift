@@ -9,12 +9,14 @@ import SwiftUI
 import F1DashModels
 
 struct UniversalDashboardView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Binding var selectedSection: DashboardSection
     @Binding var showWeatherSheet: Bool
     @Binding var showTrackMapFullScreen: Bool
     @State private var showRacePredictionSheet = false
     @State private var layoutManager = DashboardLayoutManager()
+    @State private var trackImageService = TrackImageService.shared
     @Namespace private var animation
     
     private var dashboardBackgroundColor: Color {
@@ -28,22 +30,25 @@ struct UniversalDashboardView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        ZStack {
+            // Background with track image
+            backgroundView
+            
             dashboardContent
                 .background(dashboardBackgroundColor)
-                #if !os(macOS)
-                .navigationTitle("F1 Dashboard")
-                .navigationBarTitleDisplayMode(.large)
-                #endif
-                .toolbar {
-                    DashboardToolbar(
-                        layoutManager: layoutManager,
-                        showRacePredictionSheet: $showRacePredictionSheet,
-                        sessionSubtitle: sessionSubtitle
-                    )
-                }
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: layoutManager.isEditMode)
         }
+        #if !os(macOS)
+        .navigationTitle("F1 Dashboard")
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            DashboardToolbar(
+                layoutManager: layoutManager,
+                showRacePredictionSheet: $showRacePredictionSheet,
+                sessionSubtitle: sessionSubtitle
+            )
+        }
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: layoutManager.isEditMode)
         .sheet(isPresented: $showRacePredictionSheet) {
             RacePredictionSheetView()
         }
@@ -90,19 +95,29 @@ struct UniversalDashboardView: View {
                 )
                 
                 ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(layoutManager.sections) { section in
-                            if section.isVisible && shouldShowSection(section.type) {
-                                sectionBuilder.buildSection(for: section.type)
-                                    .matchedGeometryEffect(
-                                        id: section.id,
-                                        in: animation,
-                                        properties: .position
-                                    )
+                    VStack(spacing: 12) {
+                        if selectedSection == .all {
+                            // Show all sections normally
+                            ForEach(layoutManager.sections) { section in
+                                if section.isVisible && shouldShowSection(section.type) {
+                                    sectionBuilder.buildSection(for: section.type)
+                                        .matchedGeometryEffect(
+                                            id: section.id,
+                                            in: animation,
+                                            properties: .position
+                                        )
+                                }
+                            }
+                        } else {
+                            // Show single section expanded
+                            if let sectionType = dashboardSectionTypeFromSelection(selectedSection) {
+                                buildExpandedSection(for: sectionType, fullScreen: true)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }
                     }
-                    .padding(.bottom)
+                    .padding(.horizontal, selectedSection == .all ? 12 : 0)
+                    .padding(.vertical, selectedSection == .all ? 12 : 0)
                 }
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .scale(scale: 1.05)),
@@ -123,12 +138,136 @@ struct UniversalDashboardView: View {
         switch selectedSection {
         case .all:
             return true
+        case .weather:
+            return type == .trackMap
         case .trackMap:
             return type == .trackMap
         case .liveTiming:
             return type == .liveTiming
         case .raceControl:
             return type == .raceControl
+        }
+    }
+    
+    private func dashboardSectionTypeFromSelection(_ selection: DashboardSection) -> DashboardSectionType? {
+        switch selection {
+        case .all:
+            return nil
+        case .weather:
+            return .weather
+        case .trackMap:
+            return .trackMap
+        case .liveTiming:
+            return .liveTiming
+        case .raceControl:
+            return .raceControl
+        }
+    }
+    
+    @ViewBuilder
+  private func buildExpandedSection(for type: DashboardSectionType, fullScreen: Bool = false) -> some View {
+        switch type {
+        case .weather:
+          VStack(spacing: 12) {
+            WeatherView()
+            
+            // Wind map card
+            WindMapCard()
+              .frame(minHeight: 250)
+          }
+          .padding()
+          .modifier(PlatformGlassCardModifier())
+                
+        case .trackMap:
+          VStack {
+            TrackMapSection(showTrackMapFullScreen: $showTrackMapFullScreen)
+            ScrollView {
+                TeamRadiosView()
+              }
+            }
+            .padding()
+            .modifier(PlatformGlassCardModifier())
+            
+            
+        case .liveTiming:
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Live Timing")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    Spacer()
+                }
+                .padding(.horizontal)
+                
+                if appEnvironment.connectionStatus == .disconnected {
+                    DisconnectedStateView(
+                        title: "Live Timing Not Available",
+                        message: "Connect to live session to view timing data",
+                        minHeight: 300
+                    )
+                } else {
+                    // Full screen timing for all devices
+                    ScrollView([.horizontal, .vertical]) {
+                        EnhancedDriverListView()
+                            .frame(minWidth: 800)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .padding()
+            
+        case .raceControl:
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Race Control", systemImage: "flag.2.crossed")
+                    .font(.headline)
+                    .padding(.horizontal)
+                
+                if appEnvironment.connectionStatus == .disconnected {
+                    DisconnectedStateView(
+                        title: "Race Control Not Available",
+                        message: "Connect to live session to view messages",
+                        iconName: "flag.2.crossed.fill",
+                        minHeight: 100
+                    )
+                } else if let messages = appEnvironment.liveSessionState.raceControlMessages?.messages, !messages.isEmpty {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 8) {
+                            ForEach(messages.sorted(by: { $0.utc > $1.utc }), id: \.utc) { message in
+                                RaceControlMessageRow(message: message)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ContentUnavailableView(
+                        "No Messages",
+                        systemImage: "flag.2.crossed",
+                        description: Text("No race control messages at this time")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .padding()
+        }
+    }
+    
+    @ViewBuilder
+    private var backgroundView: some View {
+        if appEnvironment.connectionStatus == .connected,
+           appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name != nil {
+            // Use real MapKit background
+            MapKitBackground()
+                .transition(.opacity.animation(.easeInOut(duration: 0.8)))
+        } else if let countryName = appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name {
+            // Fallback gradient while not connected
+            trackImageService.placeholderGradient(for: countryName)
+                .ignoresSafeArea()
+                .blur(radius: 10)
+                .overlay(
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                )
         }
     }
     

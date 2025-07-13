@@ -71,7 +71,8 @@ class AudioPlayerManager {
 }
 
 struct TeamRadioView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var audioPlayer = AudioPlayerManager()
     
     private var teamRadio: TeamRadio? {
@@ -108,7 +109,8 @@ struct TeamRadioView: View {
 }
 
 struct TeamRadioRow: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let capture: RadioCapture
     let audioPlayer: AudioPlayerManager
     
@@ -194,7 +196,8 @@ struct TeamRadioRow: View {
 // MARK: - Compact Team Radio View
 
 struct CompactTeamRadioView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var latestCapture: RadioCapture? {
         appEnvironment.liveSessionState.teamRadio?.captures

@@ -13,7 +13,8 @@ import AppKit
 
 public struct PopoverContentView: View {
     public init() {}
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     public var body: some View {
         VStack(spacing: 0) {
@@ -26,14 +27,16 @@ public struct PopoverContentView: View {
             if appEnvironment.connectionStatus == .connected {
                 VStack(spacing: 0) {
                     // Track Map
-                    TrackMapView()
+                    // TrackMapView()
+                    OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                         .frame(height: 300)
                         .background(Color.platformBackground)
                     
                     Divider()
                     
                     // Driver List
-                    DriverListView()
+                    // DriverListView()
+                    OptimizedDriverListView()
                         .frame(maxHeight: 400)
                 }
             } else {
@@ -60,7 +63,8 @@ public struct PopoverContentView: View {
 // MARK: - Header View
 
 struct HeaderView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack {
@@ -108,7 +112,9 @@ struct HeaderView: View {
 // MARK: - Footer View
 
 struct FooterView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         HStack {
@@ -131,6 +137,15 @@ struct FooterView: View {
                     .foregroundStyle(.secondary)
             }
             
+            // Debug button
+            Button("Debug") {
+                #if os(macOS)
+                openWindow(id: "test-race-control")
+                #endif
+            }
+            .buttonStyle(.plain)
+            .font(.caption)
+            
             // Quit button
             Button("Quit") {
                 #if os(macOS)
@@ -148,7 +163,8 @@ struct FooterView: View {
 // MARK: - Connection Status View
 
 struct ConnectionStatusView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(spacing: 16) {
@@ -239,5 +255,6 @@ extension ConnectionStatus {
 
 #Preview {
     PopoverContentView()
-        .environment(AppEnvironment())
+        // .environment(AppEnvironment())
+        .environment(OptimizedAppEnvironment())
 }

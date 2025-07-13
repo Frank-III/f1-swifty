@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct TrackStatusView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var trackStatus: TrackStatus? {
         appEnvironment.liveSessionState.trackStatus

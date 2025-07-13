@@ -9,23 +9,85 @@ import SwiftUI
 import F1DashModels
 
 struct WeatherView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var weatherData: WeatherData? {
         appEnvironment.liveSessionState.weatherData
     }
     
+    private var sessionInfo: SessionInfo? {
+        appEnvironment.liveSessionState.sessionInfo
+    }
+    
+    private var lapInfo: (current: Int, total: Int)? {
+        // Get lap count from session state
+        if let lapCount = appEnvironment.liveSessionState.lapCount {
+            return (lapCount.currentLap, lapCount.totalLaps)
+        }
+        return nil
+    }
+    
+    private var trackStatus: TrackStatus? {
+        appEnvironment.liveSessionState.trackStatus
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Weather", systemImage: "cloud.sun")
-                .font(.subheadline)
-                .fontWeight(.medium)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                PlatformHStackContainer(spacing: 12) {
-                    weatherContent
+            HStack {
+                // Country flag and weather label
+                HStack(spacing: 6) {
+                    if let countryCode = sessionInfo?.meeting?.country.code {
+                        Text(countryCode.f1CountryFlag)
+                            .font(.title3)
+                    }
+                    
+                    Label("Weather", systemImage: "cloud.sun")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                 }
-                .padding(.horizontal, 2)
+                
+                Spacer()
+                
+                // Lap counter
+                if let lap = lapInfo {
+                    HStack(spacing: 4) {
+                        Text("Lap")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(lap.current)")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .monospacedDigit()
+                        Text("/")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text("\(lap.total)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.platformSecondaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                
+                // Track status indicator
+                if let status = trackStatus {
+                    TrackStatusIndicator(status: status.status)
+                }
+            }
+            
+            if appEnvironment.connectionStatus == .disconnected {
+                CompactDisconnectedStateView(title: "Weather data not available")
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    PlatformHStackContainer(spacing: 12) {
+                        weatherContent
+                    }
+                    .padding(.horizontal, 2)
+                }
             }
         }
         .padding(12)
@@ -63,9 +125,11 @@ struct WeatherView: View {
           .padding(.vertical, 6)
           .padding(.horizontal, 4)
         } else {
+          HStack {
             ForEach(0..<5, id: \.self) { _ in
                 EnhancedWeatherLoadingComplication()
             }
+          }
         }
     }
 }
@@ -311,7 +375,8 @@ struct WindSpeedComplication: View {
 // MARK: - Compact Weather View
 
 struct CompactWeatherView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var weatherData: WeatherData? {
         appEnvironment.liveSessionState.weatherData
@@ -349,7 +414,8 @@ struct CompactWeatherView: View {
 // MARK: - Compact Header Weather View
 
 struct CompactHeaderWeatherView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var weatherData: WeatherData? {
         appEnvironment.liveSessionState.weatherData
@@ -429,6 +495,143 @@ struct CompactHeaderWeatherView: View {
     }
 }
 
+// MARK: - Track Status Indicator
+
+struct TrackStatusIndicator: View {
+    let status: TrackFlag
+    @State private var isAnimating = false
+    
+    private var flagColor: Color {
+        switch status {
+        case .green:
+            return Color(red: 0.0, green: 0.9, blue: 0.2)
+        case .yellow, .scYellow:
+            return Color(red: 1.0, green: 0.8, blue: 0.0)
+        case .red, .scRed:
+            return Color(red: 1.0, green: 0.2, blue: 0.2)
+        case .vsc:
+            return Color(red: 1.0, green: 0.6, blue: 0.0)
+        case .chequered:
+            return Color(white: 0.3)
+        case .scEndOfSession:
+            return Color.orange
+        case .unknown:
+            return Color.gray
+        }
+    }
+    
+    private var flagIcon: String {
+        switch status {
+        case .green:
+            return "flag.fill"
+        case .yellow, .scYellow:
+            return "exclamationmark.triangle.fill"
+        case .red, .scRed:
+            return "xmark.circle.fill"
+        case .vsc:
+            return "car.fill"
+        case .chequered:
+            return "flag.checkered"
+        case .scEndOfSession:
+            return "flag.checkered.2.crossed"
+        case .unknown:
+            return "questionmark.circle.fill"
+        }
+    }
+    
+    private var flagText: String {
+        switch status {
+        case .green:
+            return "GREEN"
+        case .yellow:
+            return "YELLOW"
+        case .scYellow:
+            return "SC"
+        case .red:
+            return "RED"
+        case .scRed:
+            return "SC RED"
+        case .vsc:
+            return "VSC"
+        case .chequered:
+            return "FINISH"
+        case .scEndOfSession:
+            return "END"
+        case .unknown:
+            return "---"
+        }
+    }
+    
+    private var shouldPulse: Bool {
+        switch status {
+        case .red, .scRed, .yellow, .scYellow, .vsc:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            // Outer glow/blur effect
+            RoundedRectangle(cornerRadius: 8)
+                .fill(flagColor)
+                .frame(width: 80, height: 36)
+                .blur(radius: 8)
+                .opacity(0.6)
+                .scaleEffect(shouldPulse && isAnimating ? 1.2 : 1.0)
+            
+            // Main container
+            HStack(spacing: 6) {
+                Image(systemName: flagIcon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                
+                Text(flagText)
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                ZStack {
+                    // Background with gradient
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: [flagColor, flagColor.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    // Inner highlight
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.3), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                    
+                    // Border
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                }
+            )
+            .shadow(color: flagColor.opacity(0.4), radius: 4, x: 0, y: 2)
+        }
+        .onAppear {
+            if shouldPulse {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    isAnimating = true
+                }
+            }
+        }
+    }
+}
+
 #Preview("Full Weather View") {
     WeatherView()
         .environment(AppEnvironment())
@@ -440,4 +643,16 @@ struct CompactHeaderWeatherView: View {
     CompactWeatherView()
         .environment(AppEnvironment())
         .padding()
+}
+
+#Preview("Track Status Indicators") {
+    VStack(spacing: 20) {
+        TrackStatusIndicator(status: .green)
+        TrackStatusIndicator(status: .yellow)
+        TrackStatusIndicator(status: .red)
+        TrackStatusIndicator(status: .vsc)
+        TrackStatusIndicator(status: .chequered)
+    }
+    .padding()
+    .background(Color.black)
 }

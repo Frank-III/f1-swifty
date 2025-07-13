@@ -79,8 +79,9 @@ extension View {
 // MARK: - OLED Mode Modifier
 
 struct OledModeModifier: ViewModifier {
-    @Environment(AppEnvironment.self) private var appEnvironment
-    
+//    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+
     func body(content: Content) -> some View {
         content
             .background(appEnvironment.settingsStore.oledMode ? Color.black : Color.clear)

@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct DashboardToolbar: ToolbarContent {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let layoutManager: DashboardLayoutManager
     @Binding var showRacePredictionSheet: Bool
     let sessionSubtitle: String

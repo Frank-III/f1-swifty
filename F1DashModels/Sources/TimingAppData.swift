@@ -11,13 +11,13 @@ public struct TimingAppData: Sendable, Codable {
 
 /// Timing app data for individual driver
 public struct TimingAppDataDriver: Sendable, Codable {
-    public let racingNumber: String
+    public let racingNumber: String?
     public let stints: [Stint]
     public let line: Int
     public let gridPos: String
     
     public init(
-        racingNumber: String,
+        racingNumber: String? = nil,
         stints: [Stint],
         line: Int,
         gridPos: String
@@ -26,6 +26,33 @@ public struct TimingAppDataDriver: Sendable, Codable {
         self.stints = stints
         self.line = line
         self.gridPos = gridPos
+    }
+    
+    // Custom decoding to handle line being either Int or Bool
+    private enum CodingKeys: String, CodingKey {
+        case racingNumber
+        case stints
+        case line
+        case gridPos
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.racingNumber = try container.decodeIfPresent(String.self, forKey: .racingNumber)
+        self.stints = try container.decodeIfPresent([Stint].self, forKey: .stints) ?? []
+        self.gridPos = try container.decodeIfPresent(String.self, forKey: .gridPos) ?? ""
+        
+        // Handle line being either Int or Bool
+        if let lineInt = try? container.decode(Int.self, forKey: .line) {
+            self.line = lineInt
+        } else if let lineBool = try? container.decode(Bool.self, forKey: .line) {
+            // Convert false to 0 (since line is not optional)
+            self.line = lineBool ? 1 : 0
+        } else {
+            // Default to 0 if neither works
+            self.line = 0
+        }
     }
 }
 

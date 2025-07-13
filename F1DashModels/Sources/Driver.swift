@@ -111,36 +111,36 @@ public struct TopThree: Sendable, Codable {
 
 /// Top three driver entry
 public struct TopThreeDriver: Sendable, Codable {
-    public let position: String
-    public let showPosition: Bool
-    public let racingNumber: String
-    public let tla: String
-    public let broadcastName: String
-    public let fullName: String
-    public let team: String
-    public let teamColour: String
-    public let lapTime: String
-    public let lapState: Int
-    public let diffToAhead: String
-    public let diffToLeader: String
-    public let overallFastest: Bool
-    public let personalFastest: Bool
+    public let position: String?
+    public let showPosition: Bool?
+    public let racingNumber: String?
+    public let tla: String?
+    public let broadcastName: String?
+    public let fullName: String?
+    public let team: String?
+    public let teamColour: String?
+    public let lapTime: String?
+    public let lapState: Int?
+    public let diffToAhead: String?
+    public let diffToLeader: String?
+    public let overallFastest: Bool?
+    public let personalFastest: Bool?
     
     public init(
-        position: String,
-        showPosition: Bool,
-        racingNumber: String,
-        tla: String,
-        broadcastName: String,
-        fullName: String,
-        team: String,
-        teamColour: String,
-        lapTime: String,
-        lapState: Int,
-        diffToAhead: String,
-        diffToLeader: String,
-        overallFastest: Bool,
-        personalFastest: Bool
+        position: String? = nil,
+        showPosition: Bool? = nil,
+        racingNumber: String? = nil,
+        tla: String? = nil,
+        broadcastName: String? = nil,
+        fullName: String? = nil,
+        team: String? = nil,
+        teamColour: String? = nil,
+        lapTime: String? = nil,
+        lapState: Int? = nil,
+        diffToAhead: String? = nil,
+        diffToLeader: String? = nil,
+        overallFastest: Bool? = nil,
+        personalFastest: Bool? = nil
     ) {
         self.position = position
         self.showPosition = showPosition

@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct RacePredictionSheetView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedTab = 0
@@ -163,7 +164,8 @@ struct PredictionSummaryCard: View {
 struct DriverPredictionRow: View {
     let driverNumber: String
     let prediction: ChampionshipDriver
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var driverInfo: Driver? {
         appEnvironment.liveSessionState.driverList[driverNumber]
@@ -235,7 +237,8 @@ struct DriverPredictionRow: View {
 struct TeamPredictionRow: View {
     let teamKey: String
     let prediction: ChampionshipTeam
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var teamColor: Color? {
         // Find team color from any driver

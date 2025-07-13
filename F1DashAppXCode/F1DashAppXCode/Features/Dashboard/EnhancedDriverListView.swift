@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct EnhancedDriverListView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(spacing: 0) {
@@ -114,7 +115,8 @@ struct EnhancedDriverTableHeader: View {
 }
 
 struct EnhancedDriverRowView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let driver: Driver
     @State private var showingDetail = false
     
@@ -184,12 +186,12 @@ struct EnhancedDriverRowView: View {
                 .frame(width: 50, alignment: .trailing)
             
             // Best lap time
-            Text(timing?.bestLapTime.value ?? "")
+          Text(timing?.bestLapTime?.value ?? "")
                 .font(.system(.caption, design: .monospaced))
                 .frame(width: 80, alignment: .trailing)
             
             // Last lap time
-            Text(timing?.lastLapTime.value ?? "")
+            Text(timing?.lastLapTime?.value ?? "")
                 .font(.system(.caption, design: .monospaced))
                 .frame(width: 80, alignment: .trailing)
             

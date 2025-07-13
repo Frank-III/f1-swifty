@@ -10,7 +10,8 @@ import SwiftUI
 // MARK: - OLED Background Modifier
 
 struct OledBackgroundModifier: ViewModifier {
-    @Environment(AppEnvironment.self) private var appEnvironment
+//    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let defaultColor: Color
     
     func body(content: Content) -> some View {

@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct DriverListView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         ScrollView {
@@ -38,7 +39,8 @@ struct DriverListView: View {
 }
 
 struct DriverRowView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let driver: Driver
     @State private var showingDetail = false
     
@@ -119,8 +121,8 @@ struct DriverRowView: View {
                 // Gap/Interval
                 if let timing = timing {
                     VStack(alignment: .trailing, spacing: 2) {
-                        if !timing.gapToLeader.isEmpty {
-                            Text(timing.gapToLeader)
+                      if let gapToLeader = timing.gapToLeader, !gapToLeader.isEmpty {
+                            Text(gapToLeader)
                                 .font(.system(.caption, design: .monospaced))
                         }
                         
@@ -134,11 +136,11 @@ struct DriverRowView: View {
                 }
                 
                 // Last lap time
-                if !(timing?.lastLapTime.value.isEmpty == true) {
+              if let lastLapTime = timing?.lastLapTime, !(lastLapTime.value.isEmpty == true) {
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text(timing?.lastLapTime.value ?? "")
+                      Text(lastLapTime.value)
                             .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(timing?.lastLapTime.personalFastest == true ? .purple : .primary)
+                            .foregroundStyle(lastLapTime.personalFastest == true ? .purple : .primary)
                     }
                     .frame(width: 70, alignment: .trailing)
                 }
@@ -209,7 +211,8 @@ struct DriverRowView: View {
 }
 
 struct DriverTableHeader: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack(spacing: 12) {
@@ -281,6 +284,7 @@ struct DriverTableHeader: View {
 
 #Preview {
     DriverListView()
-        .environment(AppEnvironment())
+        // .environment(AppEnvironment())
+        .environment(OptimizedAppEnvironment())
         .frame(height: 400)
 }

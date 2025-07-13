@@ -13,7 +13,8 @@ import AppKit
 
 public struct SimplePopoverView: View {
     public init() {}
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     public var body: some View {
         VStack(spacing: 0) {
@@ -27,7 +28,8 @@ public struct SimplePopoverView: View {
                 VStack(spacing: 0) {
                     // Track Map
                     if appEnvironment.liveSessionState.timingData != nil {
-                        TrackMapView()
+                        // TrackMapView()
+                        OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                             .frame(height: 180)
                             .background(Color.platformBackground)
                     }
@@ -61,7 +63,8 @@ public struct SimplePopoverView: View {
 // MARK: - Compact Header
 
 struct CompactHeader: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack(spacing: 8) {
@@ -117,7 +120,8 @@ struct CompactHeader: View {
 // MARK: - Top Drivers List
 
 struct TopDriversList: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var sortedDrivers: [Driver] {
         appEnvironment.liveSessionState.sortedDrivers
@@ -137,7 +141,8 @@ struct TopDriversList: View {
 
 struct MinimalDriverRow: View {
     let driver: Driver
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var timing: TimingDataDriver? {
         appEnvironment.liveSessionState.timing(for: driver.racingNumber)
@@ -174,12 +179,12 @@ struct MinimalDriverRow: View {
             
             // Gap/Time
             if let timing = timing {
-                if position == 1 && !timing.bestLapTime.value.isEmpty {
-                    Text(timing.bestLapTime.value)
+              if position == 1, let bestLapTime = timing.bestLapTime, !bestLapTime.value.isEmpty, let lastLapTime = timing.lastLapTime {
+                    Text(bestLapTime.value)
                         .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(timing.lastLapTime.personalFastest ? .purple : .primary)
-                } else if !timing.gapToLeader.isEmpty {
-                    Text(timing.gapToLeader)
+                        .foregroundStyle(lastLapTime.personalFastest ? .purple : .primary)
+                } else if let gapToLeader = timing.gapToLeader, !gapToLeader.isEmpty {
+                    Text(gapToLeader)
                         .font(.system(.caption2, design: .monospaced))
                 }
             }
@@ -193,7 +198,8 @@ struct MinimalDriverRow: View {
 // MARK: - Simple Connection View
 
 struct SimpleConnectionView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(spacing: 12) {
@@ -221,7 +227,8 @@ struct SimpleConnectionView: View {
 // MARK: - Minimal Footer
 
 struct MinimalFooter: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack {

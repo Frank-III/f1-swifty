@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct CarMetricsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let carData: CarDataChannels?
     
     var body: some View {
@@ -22,20 +23,20 @@ struct CarMetricsView: View {
                 VStack(spacing: 12) {
                     // First row: RPM and Speed
                     HStack(spacing: 16) {
-                        RPMGauge(rpm: data.rpm)
-                        SpeedGauge(speed: data.speed)
+                      RPMGauge(rpm: data.rpm ?? 0)
+                        SpeedGauge(speed: data.speed ?? 0)
                     }
                     
                     // Second row: Throttle and Brake
                     HStack(spacing: 16) {
-                        ThrottleGauge(throttle: data.throttle)
-                        BrakeGauge(brake: data.brake)
+                        ThrottleGauge(throttle: data.throttle ?? 0)
+                        BrakeGauge(brake: data.brake ?? 0)
                     }
                     
                     // Third row: Gear and DRS
                     HStack(spacing: 16) {
-                        GearIndicator(gear: data.gear)
-                        DRSIndicator(drs: data.drs)
+                        GearIndicator(gear: data.gear ?? 0)
+                        DRSIndicator(drs: data.drs ?? 0)
                     }
                 }
             } else {

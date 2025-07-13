@@ -14,7 +14,7 @@ import Sharing
 
 public struct DashboardSettingsView: View {
     public init() {}
-    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var customDelay: String = ""
     @State private var showCustomInput: Bool = false
     

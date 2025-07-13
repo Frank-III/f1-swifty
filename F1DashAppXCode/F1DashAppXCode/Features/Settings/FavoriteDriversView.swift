@@ -9,7 +9,7 @@ import SwiftUI
 import F1DashModels
 
 struct FavoriteDriversView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var drivers: [Driver] = []
     @State private var isLoading = true
     @State private var errorMessage: String?

@@ -102,6 +102,15 @@ actor DataProcessingActor {
             if let compressedString = value as? String {
               do {
                 let decompressedData = try await decompressData(compressedString)
+                
+                // Debug logging for position data
+                if baseTopic == "Position" {
+                  logger.info("Decompressed position data keys: \(decompressedData.keys.joined(separator: ", "))")
+                  if let positionArray = decompressedData["position"] as? [[String: Any]] {
+                    logger.info("Position data has \(positionArray.count) entries")
+                  }
+                }
+                
                 transformedState[transformedKey] = decompressedData
               } catch {
                 logger.error("Failed to decompress data for topic \(key): \(error)")

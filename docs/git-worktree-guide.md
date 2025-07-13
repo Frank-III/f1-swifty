@@ -88,6 +88,58 @@ git branch -d feature/auth
 git worktree prune
 ```
 
+## Merging to Main and Creating PRs
+
+### Creating a Pull Request from a Worktree
+```bash
+# Navigate to your worktree
+cd ~/projects/learn_swift/f1-dash-feature
+
+# Add and commit your changes
+git add .
+git commit -m "feat: implement new dashboard feature"
+
+# Push to remote (creates remote branch if needed)
+git push -u origin feature/new-dashboard
+
+# Create PR using GitHub CLI
+gh pr create --title "Add new dashboard feature" --body "Description of changes"
+
+# Or create PR via GitHub web interface
+# The push command will output a URL to create the PR
+```
+
+### Merging Directly to Main (if you have permissions)
+```bash
+# From your worktree, ensure your branch is up to date
+git pull origin main
+git rebase main  # or merge if preferred
+
+# Switch to main worktree
+cd ~/projects/learn_swift/f1-dash-swift
+git checkout main
+git pull origin main
+
+# Merge your feature branch
+git merge feature/new-dashboard
+
+# Push to remote
+git push origin main
+```
+
+### Post-Merge Cleanup
+```bash
+# Remove the worktree
+cd ~/projects/learn_swift
+git worktree remove f1-dash-feature
+
+# Delete the local branch
+git branch -d feature/new-dashboard
+
+# Delete the remote branch (if PR was merged via GitHub)
+git push origin --delete feature/new-dashboard
+```
+
 ## Common Scenarios
 
 ### Scenario 1: Quick Hotfix While Working on Feature

@@ -14,7 +14,8 @@ import Sharing
 
 public struct SettingsView: View {
     public init() {}
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     #if os(macOS)
     @State private var selectedTab = 0
     #endif
@@ -132,7 +133,8 @@ public struct SettingsView: View {
 // MARK: - General Settings
 
 struct GeneralSettingsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         Form {
@@ -199,7 +201,8 @@ struct GeneralSettingsView: View {
 // MARK: - Visual Settings
 
 struct VisualSettingsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Shared(.appStorage("showCarMetrics")) var showCarMetrics = true
     @Shared(.appStorage("showCornerNumbers")) var showCornerNumbers = false
     @Shared(.appStorage("showDriverTableHeader")) var showDriverTableHeader = true
@@ -249,7 +252,8 @@ struct VisualSettingsView: View {
 // MARK: - Drivers Settings
 
 struct DriversSettingsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationLink {
@@ -365,7 +369,8 @@ struct DriversSettingsView: View {
 // MARK: - Data Settings
 
 struct DataSettingsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var customDelay: String = ""
     @State private var showCustomInput: Bool = false
     
@@ -490,7 +495,8 @@ struct DataSettingsView: View {
 // MARK: - iOS-Specific Views
 
 struct iOSDataSettingsContent: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var customDelay: String = ""
     @State private var showCustomInput: Bool = false
     
@@ -594,7 +600,8 @@ struct iOSDataSettingsContent: View {
 }
 
 struct iOSVisualSettingsContent: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
   
     var settingsStore: SettingsStore {
       appEnvironment.settingsStore
@@ -615,7 +622,8 @@ struct iOSVisualSettingsContent: View {
 }
 
 struct iOSRaceControlSettingsContent: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         Toggle("Play Chime on Message", isOn: Binding(

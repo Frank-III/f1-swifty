@@ -1,8 +1,8 @@
 //
-//  LiveSessionState.swift
+//  LiveSessionStateNew.swift
 //  F1-Dash
 //
-//  The source of truth for all live UI data
+//  The source of truth for all live UI data - Dictionary-based version
 //
 
 import SwiftUI
@@ -11,26 +11,137 @@ import F1DashModels
 
 @MainActor
 @Observable
-final class LiveSessionState {
-    // MARK: - State Properties
+final class LiveSessionStateNew {
+    // MARK: - State Storage
     
-    private(set) var sessionInfo: SessionInfo?
-    private(set) var trackStatus: TrackStatus?
-    private(set) var driverList: [String: Driver] = [:]
-    private(set) var timingData: TimingData?
-    private(set) var timingAppData: TimingAppData?
-    private(set) var positionData: PositionData?
-    private(set) var carData: CarData?
-    private(set) var weatherData: WeatherData?
-    private(set) var raceControlMessages: RaceControlMessages?
-    private(set) var teamRadio: TeamRadio?
-    private(set) var timingStats: TimingStats?
-    private(set) var championshipPrediction: ChampionshipPrediction?
+    // Store state as dictionary for flexible merging
+    private var stateDict: [String: Any] = [:]
     
     // Track last race control message count for chime detection
     private var lastRaceControlMessageCount: Int = 0
     
-    // MARK: - Computed Properties
+    // MARK: - Computed Properties (decode on demand)
+    
+    var sessionInfo: SessionInfo? {
+        decodeFromState("sessionInfo")
+    }
+    
+    var trackStatus: TrackStatus? {
+        decodeFromState("trackStatus")
+    }
+    
+    var driverList: [String: Driver] {
+        decodeFromState("driverList") ?? [:]
+    }
+    
+    var timingData: TimingData? {
+        decodeFromState("timingData")
+    }
+    
+    var timingAppData: TimingAppData? {
+        decodeFromState("timingAppData")
+    }
+    
+    var positionData: PositionData? {
+        // The data is nested: { "positionData": { "positionData": [...] } }
+        guard let outerDict = stateDict["positionData"] as? [String: Any],
+              let positionArray = outerDict["positionData"] as? [[String: Any]] else {
+            print("LiveSessionState: Failed to extract position array")
+            return nil
+        }
+        
+        print("LiveSessionState: Found position array with \(positionArray.count) entries")
+        
+        // The PositionData model expects the array to be at the "position" key
+        // JSONDecoder can handle Int to Double conversion automatically
+        let wrappedData: [String: Any] = ["position": positionArray]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: wrappedData)
+            let decoder = JSONDecoder()
+            let decoded = try decoder.decode(PositionData.self, from: jsonData)
+            print("LiveSessionState: Successfully decoded PositionData with \(decoded.position?.count ?? 0) positions")
+            
+            if let firstPos = decoded.position?.first {
+                print("  First position timestamp: \(firstPos.timestamp)")
+                print("  First position entries: \(firstPos.entries.count)")
+                
+                // Log a few driver positions for debugging
+                for (driverNum, pos) in firstPos.entries.prefix(3) {
+                    print("  Driver \(driverNum): x=\(pos.x), y=\(pos.y), z=\(pos.z), status=\(pos.status ?? "unknown")")
+                }
+            }
+            
+            return decoded
+        } catch {
+            print("LiveSessionState: Failed to decode position data: \(error)")
+            
+            // More detailed error info
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    print("  Type mismatch: expected \(type)")
+                    print("  Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
+                    print("  Debug: \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("  Value not found: \(type)")
+                    print("  Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
+                case .keyNotFound(let key, let context):
+                    print("  Key not found: \(key.stringValue)")
+                    print("  Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
+                case .dataCorrupted(let context):
+                    print("  Data corrupted")
+                    print("  Coding path: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
+                    print("  Debug: \(context.debugDescription)")
+                @unknown default:
+                    print("  Unknown decoding error")
+                }
+            }
+            
+            // Debug the raw data structure
+            if let firstEntry = positionArray.first {
+                print("  First entry keys: \(firstEntry.keys.sorted())")
+                if let entries = firstEntry["entries"] as? [String: Any],
+                   let firstDriverKey = entries.keys.sorted().first,
+                   let firstDriver = entries[firstDriverKey] as? [String: Any] {
+                    print("  First driver entry:")
+                    for (key, value) in firstDriver {
+                        print("    \(key): \(type(of: value)) = \(value)")
+                    }
+                }
+            }
+            
+            return nil
+        }
+    }
+    
+    var carData: CarData? {
+        decodeFromState("carData")
+    }
+    
+    var weatherData: WeatherData? {
+        decodeFromState("weatherData")
+    }
+    
+    var raceControlMessages: RaceControlMessages? {
+        decodeFromState("raceControlMessages")
+    }
+    
+    var teamRadio: TeamRadio? {
+        decodeFromState("teamRadio")
+    }
+    
+    var lapCount: LapCount? {
+        decodeFromState("lapCount")
+    }
+    
+    var timingStats: TimingStats? {
+        decodeFromState("timingStats")
+    }
+    
+    var championshipPrediction: ChampionshipPrediction? {
+        decodeFromState("championshipPrediction")
+    }
     
     var sortedDrivers: [Driver] {
         driverList.values.sorted { lhs, rhs in
@@ -53,90 +164,15 @@ final class LiveSessionState {
     
     // MARK: - Update Methods
     
-    func updateFullState(_ state: F1State) {
-        sessionInfo = state.sessionInfo
-        trackStatus = state.trackStatus
-        driverList = state.driverList ?? [:]
-        timingData = state.timingData
-        timingAppData = state.timingAppData
-        positionData = state.positionData
-        carData = state.carData
-        weatherData = state.weatherData
-        raceControlMessages = state.raceControlMessages
-        teamRadio = state.teamRadio
-        timingStats = state.timingStats
-        championshipPrediction = state.championshipPrediction
+    func setFullState(_ state: [String: Any]) {
+        // Replace entire state dictionary
+        stateDict = state
     }
     
-    func applyUpdate(_ update: SendableJSON) {
-        do {
-            // Create current state representation for merging
-            let encoder = JSONEncoder()
-            let decoder = JSONDecoder()
-            
-            // Convert current state to dictionary format
-            let currentStateData = try encoder.encode(createCurrentF1State())
-            var stateDict = try JSONSerialization.jsonObject(with: currentStateData) as? [String: Any] ?? [:]
-            
-            // Merge the update using the same logic as SessionStateCache
-            DataTransformation.mergeStates(&stateDict, with: update.dictionary)
-            
-            // Convert back to F1State and update individual properties
-            let mergedData = try JSONSerialization.data(withJSONObject: stateDict)
-            let mergedState = try decoder.decode(F1State.self, from: mergedData)
-            
-            // Update individual properties from merged state
-            if let sessionInfo = mergedState.sessionInfo {
-                self.sessionInfo = sessionInfo
-            }
-            
-            if let trackStatus = mergedState.trackStatus {
-                self.trackStatus = trackStatus
-            }
-            
-            if let driverList = mergedState.driverList {
-                self.driverList = driverList
-            }
-            
-            if let timingData = mergedState.timingData {
-                self.timingData = timingData
-            }
-            
-            if let timingAppData = mergedState.timingAppData {
-                self.timingAppData = timingAppData
-            }
-            
-            if let positionData = mergedState.positionData {
-                self.positionData = positionData
-            }
-            
-            if let carData = mergedState.carData {
-                self.carData = carData
-            }
-            
-            if let weatherData = mergedState.weatherData {
-                self.weatherData = weatherData
-            }
-            
-            if let raceControlMessages = mergedState.raceControlMessages {
-                self.raceControlMessages = raceControlMessages
-            }
-            
-            if let teamRadio = mergedState.teamRadio {
-                self.teamRadio = teamRadio
-            }
-            
-            if let timingStats = mergedState.timingStats {
-                self.timingStats = timingStats
-            }
-            
-            if let championshipPrediction = mergedState.championshipPrediction {
-                self.championshipPrediction = championshipPrediction
-            }
-            
-        } catch {
-            print("Failed to apply state update: \(error)")
-        }
+    func applyPartialUpdate(_ update: [String: Any]) {
+        // Use the TypeScript-style merge logic
+//        DictionaryMerge.mergeState(&stateDict, with: update)
+        DataTransformation.mergeStates(&stateDict, with: update)
     }
     
     // Returns true if new race control messages were added
@@ -147,36 +183,28 @@ final class LiveSessionState {
         return hasNewMessages
     }
     
-    private func createCurrentF1State() -> F1State {
-        return F1State(
-            driverList: driverList.isEmpty ? nil : driverList,
-            timingData: timingData,
-            timingAppData: timingAppData,
-            positionData: positionData,
-            carData: carData,
-            trackStatus: trackStatus,
-            sessionInfo: sessionInfo,
-            weatherData: weatherData,
-            timingStats: timingStats,
-            raceControlMessages: raceControlMessages,
-            teamRadio: teamRadio,
-            championshipPrediction: championshipPrediction
-        )
+    func clear() {
+        stateDict = [:]
+        lastRaceControlMessageCount = 0
     }
     
-    func clear() {
-        sessionInfo = nil
-        trackStatus = nil
-        driverList = [:]
-        timingData = nil
-        timingAppData = nil
-        positionData = nil
-        carData = nil
-        weatherData = nil
-        raceControlMessages = nil
-        teamRadio = nil
-        timingStats = nil
-        championshipPrediction = nil
+    // MARK: - Private Decoding Helpers
+    
+    private func decodeFromState<T: Decodable>(_ key: String) -> T? {
+        guard let value = stateDict[key] else { return nil }
+        
+        do {
+            // Convert to JSON data
+            let data = try JSONSerialization.data(withJSONObject: value)
+            
+            // Decode to target type
+            let decoder = JSONDecoder()
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            // Only log errors for debugging, don't crash
+            print("Failed to decode \(key): \(error)")
+            return nil
+        }
     }
     
     // MARK: - Helper Methods
@@ -191,6 +219,15 @@ final class LiveSessionState {
     
     func position(for racingNumber: String) -> PositionCar? {
         // Get the latest position if available
-        positionData?.position.last?.entries[racingNumber]
+        positionData?.position?.last?.entries[racingNumber]
+    }
+    
+    // Debug helper methods
+    var debugStateKeys: [String] {
+        Array(stateDict.keys).sorted()
+    }
+    
+    func debugRawData(for key: String) -> Any? {
+        stateDict[key]
     }
 }

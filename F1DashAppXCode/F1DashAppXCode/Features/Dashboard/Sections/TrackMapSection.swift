@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct TrackMapSection: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Binding var showTrackMapFullScreen: Bool
     
     var body: some View {
@@ -19,30 +20,45 @@ struct TrackMapSection: View {
                     .fontWeight(.semibold)
                 Spacer()
                 
-                #if !os(macOS)
-                // Picture in Picture button
-                Button {
-                    appEnvironment.pictureInPictureManager.togglePiP()
-                } label: {
-                    Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
-                        .foregroundStyle(.secondary)
+                if appEnvironment.connectionStatus == .connected {
+                    #if !os(macOS)
+                    // Picture in Picture button
+                    Button {
+                        appEnvironment.pictureInPictureManager.togglePiP()
+                    } label: {
+                        Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
+                    #endif
+                    
+                    // Full screen button
+                    Button {
+                        showTrackMapFullScreen = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
                 }
-                .buttonStyle(PlatformGlassButtonStyle())
-                #endif
-                
-                // Full screen button
-                Button {
-                    showTrackMapFullScreen = true
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(PlatformGlassButtonStyle())
             }
             
-            TrackMapView()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxHeight: 300)
+            if appEnvironment.connectionStatus == .disconnected {
+                DisconnectedStateView(
+                    title: "Track Map Not Available",
+                    message: "Connect to live session to view track positions",
+                    iconName: "map.fill",
+                    minHeight: 200
+                )
+            } else {
+                // Responsive track map
+                GeometryReader { geometry in
+                    OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
+                        .frame(width: geometry.size.width, height: geometry.size.width * 0.6) // 16:10 aspect ratio
+                }
+                .aspectRatio(16/10, contentMode: .fit)
+                .frame(minHeight: 200, maxHeight: 400)
+            }
         }
         .padding()
         .modifier(PlatformGlassCardModifier())

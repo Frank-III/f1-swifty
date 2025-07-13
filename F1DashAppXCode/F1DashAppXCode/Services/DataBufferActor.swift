@@ -6,13 +6,12 @@
 //
 
 import Foundation
-import F1DashModels
 
 actor DataBufferActor {
     // MARK: - Types
     
     private struct BufferedMessage {
-        let message: WebSocketMessage
+        let message: [String: Any]
         let readyTime: Date
     }
     
@@ -23,7 +22,7 @@ actor DataBufferActor {
     
     // MARK: - Public Methods
     
-    func addMessage(_ message: WebSocketMessage, delay: TimeInterval) {
+    func addMessage(_ message: [String: Any], delay: TimeInterval) {
         let readyTime = Date().addingTimeInterval(delay)
         let bufferedMessage = BufferedMessage(message: message, readyTime: readyTime)
         
@@ -35,7 +34,7 @@ actor DataBufferActor {
         }
     }
     
-    func getReadyMessages() -> [WebSocketMessage] {
+    func getReadyMessages() -> [[String: Any]] {
         let now = Date()
         
         // Find messages that are ready to be processed

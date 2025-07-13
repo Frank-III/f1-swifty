@@ -10,7 +10,8 @@ import F1DashModels
 
 #if os(macOS)
 struct MacOSDashboardView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var selectedSection: DashboardSection = .dashboard
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var showWeatherSheet = false
@@ -102,7 +103,8 @@ struct MacOSDashboardView: View {
 // MARK: - Dashboard Content
 
 struct MacOSDashboardContent: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var showTrackMapFullScreen = false
     
     var body: some View {
@@ -196,7 +198,8 @@ struct MacOSDashboardContent: View {
 // MARK: - Component Cards
 
 struct SessionInfoCard: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -224,7 +227,8 @@ struct TrackStatusCard: View {
 
 struct TrackMapCard: View {
     @Binding var showFullScreen: Bool
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -251,7 +255,8 @@ struct TrackMapCard: View {
                 .help("Full Screen")
             }
             
-            TrackMapView()
+            // TrackMapView()
+            OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                 .frame(height: 250)
         }
         .modifier(MacOSCardModifier())
@@ -264,7 +269,8 @@ struct DriverListCard: View {
             Label("Live Timing", systemImage: "speedometer")
                 .font(.headline)
             
-            DriverListView()
+            // DriverListView()
+            OptimizedDriverListView()
                 .frame(height: 400)
         }
         .modifier(MacOSCardModifier())
@@ -297,7 +303,8 @@ struct LatestRaceControlCard: View {
 }
 
 struct TeamRadioCard: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -314,11 +321,15 @@ struct TeamRadioCard: View {
 // MARK: - Enhanced Views for macOS
 
 struct MacOSScheduleView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
-        ScheduleView()
-            .navigationSubtitle(sessionSubtitle)
+        NavigationStack {
+            EnhancedScheduleView()
+                .navigationTitle("Race Schedule")
+                .navigationSubtitle(sessionSubtitle)
+        }
     }
     
     private var sessionSubtitle: String {
@@ -330,7 +341,8 @@ struct MacOSScheduleView: View {
 }
 
 struct MacOSStandingsView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationStack {
@@ -352,11 +364,13 @@ struct MacOSStandingsView: View {
 }
 
 struct MacOSTrackMapView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationStack {
-            TrackMapView()
+            // TrackMapView()
+            OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                 .padding()
             .navigationTitle("Track Map")
             .navigationSubtitle(sessionSubtitle)
@@ -372,7 +386,8 @@ struct MacOSTrackMapView: View {
 }
 
 struct MacOSWeatherView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationStack {
@@ -394,7 +409,8 @@ struct MacOSWeatherView: View {
 }
 
 struct MacOSRaceControlView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationStack {
@@ -416,7 +432,8 @@ struct MacOSRaceControlView: View {
 // MARK: - Connection Components
 
 struct MacOSConnectionHeader: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack {
@@ -446,7 +463,8 @@ struct MacOSConnectionHeader: View {
 }
 
 struct ConnectionPlaceholder: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(spacing: 20) {
@@ -479,10 +497,13 @@ struct ConnectionPlaceholder: View {
 
 struct TrackMapFullScreenView: View {
     @Environment(\.dismiss) private var dismiss
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         NavigationStack {
-            TrackMapView()
+            // TrackMapView()
+            OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                 .ignoresSafeArea()
                 .navigationTitle("Track Map")
                 .platformNavigationGlass()

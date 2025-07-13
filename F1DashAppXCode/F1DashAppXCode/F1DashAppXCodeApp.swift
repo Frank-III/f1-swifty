@@ -15,7 +15,8 @@ struct F1DashAppXCodeApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     #endif
-    @State private var appEnvironment = AppEnvironment()
+    // @State private var appEnvironment = AppEnvironment()
+    @State private var appEnvironment = OptimizedAppEnvironment()
     
     
     var body: some Scene {
@@ -52,6 +53,12 @@ struct F1DashAppXCodeApp: App {
                 }
         }
         .menuBarExtraStyle(.window)
+        
+        // Test window for debugging race control
+        WindowGroup(id: "test-race-control") {
+            TestRaceControlView()
+                .environment(appEnvironment)
+        }
         #else
         // iOS/iPadOS main window
         WindowGroup {
@@ -72,7 +79,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     static var shared: AppDelegate?
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    var appEnvironment: AppEnvironment?
+    // var appEnvironment: AppEnvironment?
+    var appEnvironment: OptimizedAppEnvironment?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide dock icon for menu bar app
@@ -85,7 +93,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    func setAppEnvironment(_ environment: AppEnvironment) {
+    // func setAppEnvironment(_ environment: AppEnvironment) {
+    func setAppEnvironment(_ environment: OptimizedAppEnvironment) {
         self.appEnvironment = environment
     }
     

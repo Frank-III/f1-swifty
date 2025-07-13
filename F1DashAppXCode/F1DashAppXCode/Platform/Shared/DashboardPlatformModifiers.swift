@@ -142,7 +142,7 @@ struct PlatformGlassHeaderModifier: ViewModifier {
 // MARK: - iOS 26+ Tab Accessory Modifier
 
 struct iOS26TabAccessoryModifier: ViewModifier {
-    let appEnvironment: AppEnvironment
+    let appEnvironment: OptimizedAppEnvironment
     @Binding var selectedTab: Int
     @Binding var showWeatherSheet: Bool
     @Binding var showTrackMapFullScreen: Bool
@@ -164,7 +164,7 @@ struct iOS26TabAccessoryModifier: ViewModifier {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
 //                    }
                 }
-                .tabBarMinimizeBehavior(.never)
+                .tabBarMinimizeBehavior(.onScrollDown)
                 .tabViewStyle(.sidebarAdaptable)
         } else {
             content
