@@ -1,10 +1,11 @@
 import F1DashModels
 import Foundation
 import Logging
+import ServiceLifecycle
 import SignalRClient
 
 /// Actor responsible for managing the SignalR connection to F1 live timing
-actor SignalRClientActor {
+public actor SignalRClientActor: Service {
 
   // MARK: - Configuration
 
@@ -41,7 +42,15 @@ actor SignalRClientActor {
   private var retryCount = 0
   private let maxRetries = 10
   private var retryTask: Task<Void, Never>?
+  private var simulationTask: Task<Void, Never>?
   private var messageHandler: (@Sendable (RawMessage) async -> Void)?
+
+  // Service configuration
+  private let simulationFile: String?
+
+  public init(simulationFile: String? = nil) {
+    self.simulationFile = simulationFile
+  }
 
   // MARK: - Types
 
@@ -55,6 +64,48 @@ actor SignalRClientActor {
 
   struct ConnectionError: Error {
     let message: String
+  }
+
+  // MARK: - Lifecycle
+
+  deinit {
+    simulationTask?.cancel()
+    retryTask?.cancel()
+  }
+
+  // MARK: - Service Protocol
+
+  public func run() async throws {
+    logger.info("SignalRClientActor service started")
+
+    // Start connection based on mode
+    let connectionTask = Task {
+      do {
+        if let simulationFile = simulationFile {
+          let fileURL = URL(fileURLWithPath: simulationFile)
+          try await connectSimulation(logFile: fileURL)
+        } else {
+          try await connect()
+        }
+      } catch {
+        logger.error("Failed to establish connection: \(error)")
+      }
+    }
+
+    // Keep the service running until cancelled
+    try await withTaskCancellationHandler {
+      while !Task.isCancelled {
+        try await Task.sleep(for: .seconds(60))
+      }
+    } onCancel: {
+      connectionTask.cancel()
+      Task {
+        logger.info("SignalRClientActor service stopping")
+        await self.disconnect()
+      }
+    }
+
+    logger.info("SignalRClientActor service stopped")
   }
 
   // MARK: - Public Interface
@@ -96,6 +147,9 @@ actor SignalRClientActor {
     retryTask?.cancel()
     retryTask = nil
 
+    simulationTask?.cancel()
+    simulationTask = nil
+
     await hubConnection?.stop()
     hubConnection = nil
     connectionState = .disconnected
@@ -104,6 +158,11 @@ actor SignalRClientActor {
   /// Get current connection state
   var isConnected: Bool {
     connectionState == .connected
+  }
+
+  /// Set connection state (used by simulation task)
+  private func setConnectionState(_ state: ConnectionState) {
+    connectionState = state
   }
 
   // MARK: - Private Implementation
@@ -250,6 +309,7 @@ extension SignalRClientActor {
     // Start reading from log file
     try await startSimulation(logFile: logFile)
 
+    // Note: simulation runs in background, we don't wait for it
     connectionState = .connected
     logger.info("Simulation mode started successfully")
   }
@@ -266,9 +326,17 @@ extension SignalRClientActor {
     logger.info("Loaded \(lines.count) lines from simulation file")
 
     // Start background task to replay messages
-    Task {
+    simulationTask = Task { [weak self] in
+      guard let self = self else { return }
+
       for line in lines {
-        guard !line.isEmpty, !Task.isCancelled else { continue }
+        // Check cancellation before processing each line
+        if Task.isCancelled {
+          logger.info("Simulation task cancelled")
+          break
+        }
+
+        guard !line.isEmpty else { continue }
 
         // Parse the SignalR message format
         guard let lineData = line.data(using: .utf8),
@@ -307,10 +375,17 @@ extension SignalRClientActor {
         }
 
         // Add realistic delay between messages
-        try? await Task.sleep(for: .milliseconds(100))
+        do {
+          try await Task.sleep(for: .milliseconds(100))
+        } catch {
+          // Task was cancelled during sleep
+          logger.info("Simulation task cancelled during sleep")
+          break
+        }
       }
 
       logger.info("Simulation playback completed")
+      await self.setConnectionState(.disconnected)
     }
   }
 }

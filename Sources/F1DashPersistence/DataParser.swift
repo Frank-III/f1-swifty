@@ -99,9 +99,9 @@ public struct DataParser {
             gapValue = extractString(from: update, keyPath: "intervalToPositionAhead.value") 
                       ?? driver.intervalToPositionAhead?.value ?? ""
             leaderGapValue = extractString(from: update, keyPath: "gapToLeader") 
-                           ?? driver.gapToLeader
+                           ?? driver.gapToLeader ?? ""
             laptimeValue = extractString(from: update, keyPath: "lastLapTime.value") 
-                         ?? driver.lastLapTime.value
+                         ?? driver.lastLapTime?.value ?? ""
             
             // Extract sector values
             sector1Value = extractString(from: update, keyPath: "sectors.0.value") 
@@ -113,8 +113,8 @@ public struct DataParser {
         } else {
             // Use current values
             gapValue = driver.intervalToPositionAhead?.value ?? ""
-            leaderGapValue = driver.gapToLeader
-            laptimeValue = driver.lastLapTime.value
+            leaderGapValue = driver.gapToLeader ?? ""
+            laptimeValue = driver.lastLapTime?.value ?? ""
             sector1Value = driver.sectors.count > 0 ? driver.sectors[0].value : ""
             sector2Value = driver.sectors.count > 1 ? driver.sectors[1].value : ""
             sector3Value = driver.sectors.count > 2 ? driver.sectors[2].value : ""

@@ -9,7 +9,8 @@ import SwiftUI
 
 #if !os(macOS)
 struct PictureInPictureOverlay: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var dragOffset: CGSize = .zero
     @State private var lastDragValue: DragGesture.Value?
     
@@ -67,7 +68,8 @@ struct PictureInPictureOverlay: View {
 // MARK: - View Modifier
 
 struct PictureInPictureModifier: ViewModifier {
-    let appEnvironment: AppEnvironment
+    // let appEnvironment: AppEnvironment
+    let appEnvironment: OptimizedAppEnvironment
     
     func body(content: Content) -> some View {
         ZStack {
@@ -80,7 +82,8 @@ struct PictureInPictureModifier: ViewModifier {
 }
 
 extension View {
-    func pictureInPictureOverlay(appEnvironment: AppEnvironment) -> some View {
+    // func pictureInPictureOverlay(appEnvironment: AppEnvironment) -> some View {
+    func pictureInPictureOverlay(appEnvironment: OptimizedAppEnvironment) -> some View {
         modifier(PictureInPictureModifier(appEnvironment: appEnvironment))
     }
 }

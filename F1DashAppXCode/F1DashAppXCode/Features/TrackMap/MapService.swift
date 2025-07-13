@@ -19,7 +19,8 @@ final class MapService: ObservableObject {
             return cachedMap
         }
         
-        let year = Calendar.current.component(.year, from: Date())
+//        let year = Calendar.current.component(.year, from: Date())
+        let year = 2023
         let url = URL(string: "https://api.multiviewer.app/api/v1/circuits/\(circuitKey)/\(year)")!
         
         let (data, response) = try await session.data(from: url)
@@ -29,13 +30,18 @@ final class MapService: ObservableObject {
             throw MapServiceError.invalidResponse
         }
         
-        let decoder = JSONDecoder()
-        let map = try decoder.decode(TrackMap.self, from: data)
-        
-        // Cache the result
-        mapCache[circuitKey] = map
-        
-        return map
+        do {
+            // Use our custom decoder that handles precision issues
+            let map = try TrackMap.decode(from: data)
+            
+            // Cache the result
+            mapCache[circuitKey] = map
+            
+            return map
+        } catch {
+            print("Error decoding track map: \(error)")
+            throw MapServiceError.decodingError
+        }
     }
 }
 

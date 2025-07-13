@@ -25,7 +25,8 @@ public final class VideoBasedPictureInPictureManager: NSObject {
     private var displayLink: CADisplayLink?
     private var renderer: ImageRenderer<AnyView>?
     
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // Track if PiP is active
     private(set) var isVideoPiPActive = false
@@ -138,7 +139,8 @@ public final class VideoBasedPictureInPictureManager: NSObject {
         
         // Setup renderer
         guard let appEnvironment = appEnvironment else { return }
-        let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
+        // let trackMapView = TrackMapPiPContentTrackMapPiPContent(appEnvironment: appEnvironment)
+        let trackMapView = OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
             .frame(width: videoSize.width, height: videoSize.height)
             .background(Color.black)
         

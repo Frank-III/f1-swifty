@@ -5,7 +5,16 @@ public struct DataTransformation {
     
     /// Convert snake_case to camelCase for F1 data
     /// Also handles PascalCase by converting first letter to lowercase
+    /// Special handling for F1 topic names that need specific mappings
     public static func toCamelCase(_ string: String) -> String {
+        // Special cases for F1 topics that don't follow standard camelCase
+        switch string {
+        case "Position":
+            return "positionData"
+        default:
+            break
+        }
+        
         // Handle snake_case
         let components = string.components(separatedBy: "_")
         if components.count > 1 {
@@ -45,69 +54,44 @@ public struct DataTransformation {
     
     /// Merge two F1 state dictionaries, with update taking precedence
     public static func mergeStates(_ base: inout [String: Any], with update: [String: Any]) {
-        for (key, value) in update {
-            switch key {
-            // Special handling for driverList - each driver entry should be replaced entirely
-            case "driverList":
-                if var existingDrivers = base[key] as? [String: Any],
-                   let updateDrivers = value as? [String: Any] {
-                    // Merge at the driver level - each driver entry is replaced entirely
-                    for (driverNum, driverData) in updateDrivers {
-                        existingDrivers[driverNum] = driverData
-                    }
-                    base[key] = existingDrivers
-                } else {
-                    base[key] = value
+        for (key, updateValue) in update {
+            if let baseValue = base[key] {
+                // Both are dictionaries - merge recursively
+                if var baseDict = baseValue as? [String: Any],
+                let updateDict = updateValue as? [String: Any] {
+                    mergeStates(&baseDict, with: updateDict)
+                    base[key] = baseDict
                 }
-                
-            // Handle timing data with special care for the 'lines' subdictionary
-            case "timingData", "timingAppData", "carData", "positionData":
-                if var existingData = base[key] as? [String: Any],
-                   let updateData = value as? [String: Any] {
-                    
-                    // Check if this has a "lines" sub-dictionary (common pattern in F1 data)
-                    if var existingLines = existingData["lines"] as? [String: Any],
-                       let updateLines = updateData["lines"] as? [String: Any] {
-                        // Each line entry (by driver number) should be replaced entirely
-                        for (lineKey, lineValue) in updateLines {
-                            existingLines[lineKey] = lineValue
+                // Both are arrays - extend
+                else if var baseArray = baseValue as? [Any],
+                        let updateArray = updateValue as? [Any] {
+                    baseArray.append(contentsOf: updateArray)
+                    base[key] = baseArray
+                }
+                // Base is array, update is dictionary - handle indexed updates
+                else if var baseArray = baseValue as? [Any],
+                        let updateDict = updateValue as? [String: Any] {
+                    for (indexKey, indexValue) in updateDict {
+                        if let index = Int(indexKey), index < baseArray.count {
+                            // Merge if both are dictionaries
+                            if var baseElement = baseArray[index] as? [String: Any],
+                            let updateElement = indexValue as? [String: Any] {
+                                mergeStates(&baseElement, with: updateElement)
+                                baseArray[index] = baseElement
+                            } else {
+                                baseArray[index] = indexValue
+                            }
                         }
-                        existingData["lines"] = existingLines
                     }
-                    
-                    // Merge other fields at top level
-                    for (k, v) in updateData {
-                        if k == "lines" { continue } // Already handled above
-                        existingData[k] = v
-                    }
-                    base[key] = existingData
-                } else {
-                    base[key] = value
+                    base[key] = baseArray
                 }
-                
-            // Arrays should typically be replaced entirely, not merged
-            case "raceControlMessages", "teamRadio":
-                if let updateArray = value as? [[String: Any]] {
-                    base[key] = updateArray
-                } else {
-                    base[key] = value
+                // Otherwise replace
+                else {
+                    base[key] = updateValue
                 }
-                
-            // For other nested objects, do recursive merge
-            default:
-                if let existingDict = base[key] as? [String: Any],
-                   let updateDict = value as? [String: Any] {
-                    var merged = existingDict
-                    mergeStates(&merged, with: updateDict)
-                    base[key] = merged
-                } else if let existingArray = base[key] as? [Any],
-                          let updateArray = value as? [Any] {
-                    // For arrays, extend with new values
-                    base[key] = existingArray + updateArray
-                } else {
-                    // Simple value replacement
-                    base[key] = value
-                }
+            } else {
+                // Key doesn't exist in base - just add it
+                base[key] = updateValue
             }
         }
     }

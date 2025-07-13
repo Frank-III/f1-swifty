@@ -17,7 +17,7 @@ struct F1DashServerApp: AsyncParsableCommand, AppArguments {
   var host: String = "0.0.0.0"
 
   @Option(name: .shortAndLong, help: "Server port to bind to")
-  var port: Int = 8080
+  var port: Int = 3000
 
   @Option(name: .long, help: "Simulation log file path (for simulation mode)")
   var simulate: String?

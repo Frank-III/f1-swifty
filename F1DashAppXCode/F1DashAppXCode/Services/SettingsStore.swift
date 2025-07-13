@@ -37,6 +37,31 @@ final class SettingsStore {
     @ObservationIgnored
     @Shared(.appStorage("autoConnect")) var autoConnect = true
     
+    // MARK: - Visual Settings
+    
+    @ObservationIgnored
+    @Shared(.appStorage("showCarMetrics")) var showCarMetrics = true
+    
+    @ObservationIgnored
+    @Shared(.appStorage("showDriverTableHeader")) var showDriverTableHeader = true
+    
+    @ObservationIgnored
+    @Shared(.appStorage("showDriversBestSectors")) var showDriversBestSectors = true
+    
+    @ObservationIgnored
+    @Shared(.appStorage("showDriversMiniSectors")) var showDriversMiniSectors = true
+    
+    @ObservationIgnored
+    @Shared(.appStorage("oledMode")) var oledMode = false
+    
+    @ObservationIgnored
+    @Shared(.appStorage("useSafetyCarColors")) var useSafetyCarColors = true
+    
+    // MARK: - Race Control Settings
+    
+    @ObservationIgnored
+    @Shared(.appStorage("playRaceControlChime")) var playRaceControlChime = true
+    
     // MARK: - Computed Properties
     
     var favoriteDriverIDs: Set<String> {
@@ -91,6 +116,13 @@ final class SettingsStore {
         $compactMode.withLock { $0 = false }
         $showCornerNumbers.withLock { $0 = false }
         $autoConnect.withLock { $0 = true }
+        $showCarMetrics.withLock { $0 = true }
+        $showDriverTableHeader.withLock { $0 = true }
+        $showDriversBestSectors.withLock { $0 = true }
+        $showDriversMiniSectors.withLock { $0 = true }
+        $oledMode.withLock { $0 = false }
+        $useSafetyCarColors.withLock { $0 = true }
+        $playRaceControlChime.withLock { $0 = true }
     }
 }
 

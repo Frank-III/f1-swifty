@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct LapTimeDetailView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     let driver: Driver
     
     private var timing: TimingDataDriver? {
@@ -58,12 +59,12 @@ struct LapTimeDetailView: View {
             // Lap times
             VStack(alignment: .leading, spacing: 12) {
                 // Best lap time
-                if let bestLap = timing?.bestLapTime.value, !bestLap.isEmpty {
+              if let bestLap = timing?.bestLapTime?.value, !bestLap.isEmpty {
                     LapTimeRow(
                         title: "Best Lap",
                         time: bestLap,
                         isPersonalBest: true,
-                        isOverallBest: timingStats?.personalBestLapTime.value == bestLap
+                        isOverallBest: timingStats?.personalBestLapTime?.value == bestLap
                     )
                 }
                 
@@ -81,7 +82,8 @@ struct LapTimeDetailView: View {
             Divider()
             
             // Sector times
-            if let sectors = timing?.sectors, !sectors.isEmpty {
+            if appEnvironment.settingsStore.showDriversBestSectors,
+               let sectors = timing?.sectors, !sectors.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Sectors")
                         .font(.headline)
@@ -91,7 +93,8 @@ struct LapTimeDetailView: View {
                             SectorView(
                                 sectorNumber: index + 1,
                                 sector: sector,
-                                bestSector: timingStats?.bestSectors[safe: index]
+                                bestSector: timingStats?.bestSectors[safe: index],
+                                showMiniSectors: appEnvironment.settingsStore.showDriversMiniSectors
                             )
                         }
                     }
@@ -107,10 +110,10 @@ struct LapTimeDetailView: View {
                         .font(.headline)
                     
                     HStack(spacing: 20) {
-                        SpeedTrapItem(label: "I1", speed: bestSpeeds.i1.value)
-                        SpeedTrapItem(label: "I2", speed: bestSpeeds.i2.value)
-                        SpeedTrapItem(label: "FL", speed: bestSpeeds.fl.value)
-                        SpeedTrapItem(label: "ST", speed: bestSpeeds.st.value)
+                        SpeedTrapItem(label: "I1", speed: bestSpeeds.i1?.value ?? "")
+                        SpeedTrapItem(label: "I2", speed: bestSpeeds.i2?.value ?? "")
+                        SpeedTrapItem(label: "FL", speed: bestSpeeds.fl?.value ?? "")
+                        SpeedTrapItem(label: "ST", speed: bestSpeeds.st?.value ?? "")
                     }
                 }
             }
@@ -124,15 +127,15 @@ struct LapTimeDetailView: View {
                         .font(.headline)
                     
                     HStack(spacing: 20) {
-                        if !timing.gapToLeader.isEmpty {
-                            GapItem(label: "To Leader", value: timing.gapToLeader)
+                        if let gapToLeader = timing.gapToLeader, !gapToLeader.isEmpty {
+                            GapItem(label: "To Leader", value: gapToLeader)
                         }
                         
                         if let interval = timing.intervalToPositionAhead {
                             GapItem(
                                 label: "Interval",
                                 value: interval.value,
-                                isCatching: interval.catching
+                                isCatching: interval.catching ?? false
                             )
                         }
                     }
@@ -196,6 +199,7 @@ struct SectorView: View {
     let sectorNumber: Int
     let sector: Sector
     let bestSector: PersonalBestLapTime?
+    let showMiniSectors: Bool
     
     var body: some View {
         VStack(alignment: .center, spacing: 4) {
@@ -214,12 +218,14 @@ struct SectorView: View {
                     .foregroundStyle(.secondary)
             }
             
-            // Mini segments
-            HStack(spacing: 2) {
-                ForEach(Array(sector.segments.enumerated()), id: \.offset) { _, segment in
-                    RoundedRectangle(cornerRadius: 1)
+            // Mini segments (if enabled)
+            if showMiniSectors {
+                HStack(spacing: 2) {
+                    ForEach(Array(sector.segments.enumerated()), id: \.offset) { _, segment in
+                        RoundedRectangle(cornerRadius: 1)
                         .fill(segmentColor(for: segment.status))
-                        .frame(width: 12, height: 3)
+                            .frame(width: 12, height: 3)
+                    }
                 }
             }
         }

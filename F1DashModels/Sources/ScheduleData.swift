@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a race weekend in the F1 calendar
-public struct RaceRound: Codable, Identifiable, Sendable {
+public struct RaceRound: Codable, Identifiable, Sendable, Hashable {
     public let id = UUID()
     public let name: String           // e.g., "Austrian Grand Prix"
     public let countryName: String    // e.g., "Austria"
@@ -61,7 +61,7 @@ public struct RaceRound: Codable, Identifiable, Sendable {
 }
 
 /// Represents an individual session within a race weekend
-public struct RaceSession: Codable, Identifiable, Sendable {
+public struct RaceSession: Codable, Identifiable, Sendable, Hashable {
     public let id = UUID()
     public let kind: String    // e.g., "Practice 1", "Qualifying", "Race", "Sprint Race"
     public let start: Date     // Session start time
@@ -117,6 +117,11 @@ public struct RaceSession: Codable, Identifiable, Sendable {
 
 /// Extension for formatted display
 extension RaceRound {
+    /// Unique identifier for preferences
+    public var preferenceId: String {
+        "\(countryName)-\(start.timeIntervalSince1970)"
+    }
+    
     /// Formatted date range for the race weekend
     public var formattedDateRange: String {
         let formatter = DateFormatter()

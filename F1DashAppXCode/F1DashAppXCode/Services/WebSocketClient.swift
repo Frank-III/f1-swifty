@@ -87,13 +87,21 @@ actor WebSocketClient {
                 case .data(let data):
                     if let wsMessage = try? JSONDecoder().decode(WebSocketMessage.self, from: data) {
                         messageContinuation?.yield(wsMessage)
+                    } else {
+                        if let jsonString = String(data: data, encoding: .utf8) {
+                            print("WebSocketClient: Raw JSON: \(jsonString.prefix(200))...")
+                        }
                     }
                 case .string(let text):
                     if let data = text.data(using: .utf8),
                        let wsMessage = try? JSONDecoder().decode(WebSocketMessage.self, from: data) {
                         messageContinuation?.yield(wsMessage)
+                    } else {
+                        print("WebSocketClient: Failed to decode string message")
+                        print("WebSocketClient: Raw text: \(text.prefix(200))...")
                     }
                 @unknown default:
+                    print(message)
                     break
                 }
             }

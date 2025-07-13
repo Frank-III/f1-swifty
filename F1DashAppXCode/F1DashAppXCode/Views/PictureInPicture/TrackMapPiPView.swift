@@ -8,11 +8,12 @@
 import SwiftUI
 
 struct TrackMapPiPView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         if appEnvironment.pictureInPictureManager.isPiPActive {
-            TrackMapPiPContent(appEnvironment: appEnvironment)
+            // TrackMapPiPContent(appEnvironment: appEnvironment)
+            OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
         }
     }
 }

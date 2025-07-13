@@ -33,7 +33,8 @@ public final class StreamingPictureInPictureManager: NSObject {
     private var playerLayer: AVPlayerLayer?
     private var pictureInPictureController: AVPictureInPictureController?
     
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // Track if PiP is active
     private(set) var isStreamingPiPActive = false
@@ -71,7 +72,8 @@ public final class StreamingPictureInPictureManager: NSObject {
     
     // MARK: - Private Methods
     
-    private func setupHiddenWindow(with appEnvironment: AppEnvironment) {
+    // private func setupHiddenWindow(with appEnvironment: AppEnvironment) {
+    private func setupHiddenWindow(with appEnvironment: OptimizedAppEnvironment) {
         #if !os(macOS)
         // Create a hidden window with the track map
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 480, height: 360))
@@ -80,7 +82,8 @@ public final class StreamingPictureInPictureManager: NSObject {
         window.alpha = 0.01 // Nearly invisible
         
         // Create the track map view
-        let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
+        // let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
+        let trackMapView = OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
             .frame(width: 480, height: 360)
             .background(Color.black)
         

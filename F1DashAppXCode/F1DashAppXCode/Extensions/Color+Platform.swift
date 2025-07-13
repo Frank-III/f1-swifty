@@ -34,4 +34,28 @@ extension Color {
         return Color(uiColor: .systemGroupedBackground)
         #endif
     }
+    
+    /// Returns background color based on OLED mode setting
+    static func dynamicBackground(oledMode: Bool) -> Color {
+        if oledMode {
+            return Color.black
+        }
+        return platformBackground
+    }
+    
+    /// Returns secondary background color based on OLED mode setting
+    static func dynamicSecondaryBackground(oledMode: Bool) -> Color {
+        if oledMode {
+            return Color.black
+        }
+        return platformSecondaryBackground
+    }
+    
+    /// Returns grouped background color based on OLED mode setting
+    static func dynamicGroupedBackground(oledMode: Bool) -> Color {
+        if oledMode {
+            return Color.black
+        }
+        return platformGroupedBackground
+    }
 }

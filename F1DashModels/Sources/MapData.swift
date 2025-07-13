@@ -233,4 +233,275 @@ public extension TrackMap {
         
         return sectors
     }
+    
+    /// Custom decoder that handles floating-point precision issues
+    static func decode(from data: Data) throws -> TrackMap {
+        // First, try the standard decoder
+        let decoder = JSONDecoder()
+        
+        do {
+            return try decoder.decode(TrackMap.self, from: data)
+        } catch DecodingError.dataCorrupted(_) {
+            // If we get a data corrupted error, it's likely due to precision issues
+            // Fall back to JSONSerialization with more lenient parsing
+            return try decodeWithJSONSerialization(from: data)
+        }
+    }
+    
+    private static func decodeWithJSONSerialization(from data: Data) throws -> TrackMap {
+        // Parse with JSONSerialization which handles numbers differently
+        guard let json = try JSONSerialization.jsonObject(with: data, options: [.allowFragments]) as? [String: Any] else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: [],
+                debugDescription: "Root object is not a dictionary"
+            ))
+        }
+        
+        // Print available keys for debugging
+        print("Available JSON keys: \(Array(json.keys).sorted())")
+        
+        // Extract and convert all required fields with detailed error reporting
+        var missingFields: [String] = []
+        
+        // Parse complex fields first
+        let corners: [Corner]
+        do {
+            corners = try parseCorners(from: json["corners"]) ?? []
+        } catch {
+            print("Error parsing corners: \(error)")
+            corners = []
+        }
+        
+        let marshalLights: [Corner]
+        do {
+            marshalLights = try parseCorners(from: json["marshalLights"]) ?? []
+        } catch {
+            print("Error parsing marshalLights: \(error)")
+            marshalLights = []
+        }
+        
+        let marshalSectors: [Corner]
+        do {
+            marshalSectors = try parseCorners(from: json["marshalSectors"]) ?? []
+        } catch {
+            print("Error parsing marshalSectors: \(error)")
+            marshalSectors = []
+        }
+        
+        let candidateLap: CandidateLap
+        do {
+            candidateLap = try parseCandidateLap(from: json["candidateLap"]) ?? CandidateLap(
+                driverNumber: "",
+                lapNumber: 0,
+                lapStartDate: "",
+                lapStartSessionTime: 0,
+                lapTime: 0,
+                session: "",
+                sessionStartTime: 0
+            )
+        } catch {
+            print("Error parsing candidateLap: \(error)")
+            candidateLap = CandidateLap(
+                driverNumber: "",
+                lapNumber: 0,
+                lapStartDate: "",
+                lapStartSessionTime: 0,
+                lapTime: 0,
+                session: "",
+                sessionStartTime: 0
+            )
+        }
+        
+        // Parse simple fields with nil coalescing and error tracking
+        let circuitKey = json["circuitKey"] as? Int ?? {
+            missingFields.append("circuitKey (found: \(type(of: json["circuitKey"])))")
+            return 0
+        }()
+        
+        let circuitName = json["circuitName"] as? String ?? {
+            missingFields.append("circuitName (found: \(type(of: json["circuitName"])))")
+            return ""
+        }()
+        
+        let countryIocCode = json["countryIocCode"] as? String ?? {
+            missingFields.append("countryIocCode (found: \(type(of: json["countryIocCode"])))")
+            return ""
+        }()
+        
+        let countryKey = json["countryKey"] as? Int ?? {
+            missingFields.append("countryKey (found: \(type(of: json["countryKey"])))")
+            return 0
+        }()
+        
+        let countryName = json["countryName"] as? String ?? {
+            missingFields.append("countryName (found: \(type(of: json["countryName"])))")
+            return ""
+        }()
+        
+        let location = json["location"] as? String ?? {
+            missingFields.append("location (found: \(type(of: json["location"])))")
+            return ""
+        }()
+        
+        let meetingKey = json["meetingKey"] as? String ?? {
+            missingFields.append("meetingKey (found: \(type(of: json["meetingKey"])))")
+            return ""
+        }()
+        
+        let meetingName = json["meetingName"] as? String ?? {
+            missingFields.append("meetingName (found: \(type(of: json["meetingName"])))")
+            return ""
+        }()
+        
+        let meetingOfficialName = json["meetingOfficialName"] as? String ?? {
+            missingFields.append("meetingOfficialName (found: \(type(of: json["meetingOfficialName"])))")
+            return ""
+        }()
+        
+        let raceDate = json["raceDate"] as? String ?? {
+            missingFields.append("raceDate (found: \(type(of: json["raceDate"])))")
+            return ""
+        }()
+        
+        let rotation = parseDouble(from: json["rotation"]) ?? {
+            missingFields.append("rotation (found: \(type(of: json["rotation"])))")
+            return 0.0
+        }()
+        
+        let round = json["round"] as? Int ?? {
+            missingFields.append("round (found: \(type(of: json["round"])))")
+            return 0
+        }()
+        
+        let trackPositionTime = parseDoubleArray(from: json["trackPositionTime"]) ?? {
+            missingFields.append("trackPositionTime (found: \(type(of: json["trackPositionTime"])))")
+            return []
+        }()
+        
+        let x = parseDoubleArray(from: json["x"]) ?? {
+            missingFields.append("x (found: \(type(of: json["x"])))")
+            return []
+        }()
+        
+        let y = parseDoubleArray(from: json["y"]) ?? {
+            missingFields.append("y (found: \(type(of: json["y"])))")
+            return []
+        }()
+        
+        let year = json["year"] as? Int ?? {
+            missingFields.append("year (found: \(type(of: json["year"])))")
+            return 2023  // Default to 2023 if missing
+        }()
+        
+        // Only throw error for critical missing fields
+        let criticalFields = ["x", "y", "circuitKey"]
+        let criticalMissing = missingFields.filter { field in
+            criticalFields.contains { critical in field.hasPrefix(critical) }
+        }
+        
+        if !criticalMissing.isEmpty {
+            print("Critical missing fields: \(criticalMissing)")
+            print("All missing/invalid fields: \(missingFields)")
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: [],
+                debugDescription: "Critical fields missing: \(criticalMissing.joined(separator: ", "))"
+            ))
+        }
+        
+        if !missingFields.isEmpty {
+            print("Non-critical missing/invalid fields (using defaults): \(missingFields)")
+        }
+        
+        return TrackMap(
+            corners: corners,
+            marshalLights: marshalLights,
+            marshalSectors: marshalSectors,
+            candidateLap: candidateLap,
+            circuitKey: circuitKey,
+            circuitName: circuitName,
+            countryIocCode: countryIocCode,
+            countryKey: countryKey,
+            countryName: countryName,
+            location: location,
+            meetingKey: meetingKey,
+            meetingName: meetingName,
+            meetingOfficialName: meetingOfficialName,
+            raceDate: raceDate,
+            rotation: rotation,
+            round: round,
+            trackPositionTime: trackPositionTime,
+            x: x,
+            y: y,
+            year: year
+        )
+    }
+    
+    private static func parseCorners(from value: Any?) throws -> [Corner]? {
+        guard let array = value as? [[String: Any]] else { return nil }
+        
+        return try array.map { dict in
+            guard let angle = parseDouble(from: dict["angle"]),
+                  let length = parseDouble(from: dict["length"]),
+                  let number = dict["number"] as? Int,
+                  let trackPositionDict = dict["trackPosition"] as? [String: Any],
+                  let x = parseDouble(from: trackPositionDict["x"]),
+                  let y = parseDouble(from: trackPositionDict["y"]) else {
+                throw DecodingError.dataCorrupted(DecodingError.Context(
+                    codingPath: [],
+                    debugDescription: "Invalid corner data"
+                ))
+            }
+            
+            return Corner(
+                angle: angle,
+                length: length,
+                number: number,
+                trackPosition: TrackPosition(x: x, y: y)
+            )
+        }
+    }
+    
+    private static func parseCandidateLap(from value: Any?) throws -> CandidateLap? {
+        guard let dict = value as? [String: Any],
+              let driverNumber = dict["driverNumber"] as? String,
+              let lapNumber = dict["lapNumber"] as? Int,
+              let lapStartDate = dict["lapStartDate"] as? String,
+              let lapStartSessionTime = dict["lapStartSessionTime"] as? Int,
+              let lapTime = dict["lapTime"] as? Int,
+              let session = dict["session"] as? String,
+              let sessionStartTime = dict["sessionStartTime"] as? Int else {
+            return nil
+        }
+        
+        return CandidateLap(
+            driverNumber: driverNumber,
+            lapNumber: lapNumber,
+            lapStartDate: lapStartDate,
+            lapStartSessionTime: lapStartSessionTime,
+            lapTime: lapTime,
+            session: session,
+            sessionStartTime: sessionStartTime
+        )
+    }
+    
+    private static func parseDouble(from value: Any?) -> Double? {
+        if let double = value as? Double {
+            return double
+        } else if let int = value as? Int {
+            return Double(int)
+        } else if let string = value as? String, let double = Double(string) {
+            return double
+        } else if let number = value as? NSNumber {
+            return number.doubleValue
+        }
+        return nil
+    }
+    
+    private static func parseDoubleArray(from value: Any?) -> [Double]? {
+        guard let array = value as? [Any] else { return nil }
+        
+        return array.compactMap { element in
+            parseDouble(from: element)
+        }
+    }
 }

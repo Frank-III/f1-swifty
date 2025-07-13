@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		099768322E1F045800A7AD90 /* EventSource in Frameworks */ = {isa = PBXBuildFile; productRef = 099768312E1F045800A7AD90 /* EventSource */; };
 		09CF07592E15A7120027A478 /* Sharing in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF07582E15A7120027A478 /* Sharing */; };
 		09CF075C2E15A79B0027A478 /* F1DashModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF075B2E15A79B0027A478 /* F1DashModels */; };
 /* End PBXBuildFile section */
@@ -58,6 +59,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				09CF07592E15A7120027A478 /* Sharing in Frameworks */,
+				099768322E1F045800A7AD90 /* EventSource in Frameworks */,
 				09CF075C2E15A79B0027A478 /* F1DashModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -121,6 +123,7 @@
 			packageProductDependencies = (
 				09CF07582E15A7120027A478 /* Sharing */,
 				09CF075B2E15A79B0027A478 /* F1DashModels */,
+				099768312E1F045800A7AD90 /* EventSource */,
 			);
 			productName = F1DashAppXCode;
 			productReference = 09CF06D92E15A6980027A478 /* F1DashAppXCode.app */;
@@ -207,6 +210,7 @@
 			packageReferences = (
 				09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */,
 				09CF075A2E15A79B0027A478 /* XCLocalSwiftPackageReference "../F1DashModels" */,
+				099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 09CF06DA2E15A6980027A478 /* Products */;
@@ -631,6 +635,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/loopwork/EventSource.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
 		09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-sharing";
@@ -642,6 +654,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		099768312E1F045800A7AD90 /* EventSource */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */;
+			productName = EventSource;
+		};
 		09CF07582E15A7120027A478 /* Sharing */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */;

@@ -7,15 +7,43 @@ public struct RaceControlMessages: Sendable, Codable {
     public init(messages: [RaceControlMessage]) {
         self.messages = messages
     }
+    
+    // Custom decoding to handle messages being either array or dictionary
+    private enum CodingKeys: String, CodingKey {
+        case messages
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        if container.contains(.messages) {
+            do {
+                // Try decoding as array first (expected format)
+                self.messages = try container.decode([RaceControlMessage].self, forKey: .messages)
+            } catch {
+                // If that fails, try decoding as dictionary
+                if let messagesDict = try? container.decode([String: RaceControlMessage].self, forKey: .messages) {
+                    // Convert dictionary to array, sorted by key
+                    self.messages = messagesDict.sorted { $0.key < $1.key }.map { $0.value }
+                } else {
+                    // If both fail, use empty array
+                    self.messages = []
+                }
+            }
+        } else {
+            // If messages key is missing, use empty array
+            self.messages = []
+        }
+    }
 }
 
 /// Individual race control message
 public struct RaceControlMessage: Sendable, Codable, Identifiable {
     public let utc: String
-    public let lap: Int?
+    public let lap: Bool?
     public let category: MessageCategory
     public let message: String
-    public let status: MessageStatus
+    public let status: MessageStatus?
     public let flag: MessageFlag?
     public let scope: MessageScope?
     public let sector: Int?
@@ -27,10 +55,10 @@ public struct RaceControlMessage: Sendable, Codable, Identifiable {
     
     public init(
         utc: String,
-        lap: Int? = nil,
+        lap: Bool? = nil,
         category: MessageCategory,
         message: String,
-        status: MessageStatus,
+        status: MessageStatus? = nil,
         flag: MessageFlag? = nil,
         scope: MessageScope? = nil,
         sector: Int? = nil,
@@ -63,6 +91,29 @@ public enum MessageCategory: String, Sendable, Codable, CaseIterable {
     case carEvent = "CarEvent"
     case track = "Track"
     case other = "Other"
+    
+    // Handle case-insensitive decoding
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        
+        // Try exact match first
+        if let category = MessageCategory(rawValue: rawValue) {
+            self = category
+        } else {
+            // Try case-insensitive match
+            let lowercased = rawValue.lowercased()
+            switch lowercased {
+            case "flag": self = .flag
+            case "drs": self = .drs
+            case "safetycar": self = .safetycar
+            case "carevent": self = .carEvent
+            case "track": self = .track
+            case "other": self = .other
+            default: self = .other // Default to other if unknown
+            }
+        }
+    }
     
     public var displayName: String {
         switch self {
@@ -100,10 +151,31 @@ public enum MessageCategory: String, Sendable, Codable, CaseIterable {
 }
 
 /// Message status
-public enum MessageStatus: String, Sendable, Codable, CaseIterable {
+public enum MessageStatus: String, Sendable, Codable {
     case published = "PUBLISHED"
     case deleted = "DELETED"
     case updated = "UPDATED"
+    case disabled = "DISABLED"  // DRS status
+    case enabled = "ENABLED"    // DRS status
+    case unknown = "UNKNOWN"
+    
+    public static var allCases: [MessageStatus] {
+        return [.published, .deleted, .updated, .disabled, .enabled]
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        
+        // Try exact match first
+        if let status = MessageStatus(rawValue: rawValue) {
+            self = status
+        } else {
+            // Default to unknown for unrecognized values
+            self = .unknown
+            print("Unknown MessageStatus value: \(rawValue)")
+        }
+    }
     
     public var displayName: String {
         switch self {
@@ -113,6 +185,12 @@ public enum MessageStatus: String, Sendable, Codable, CaseIterable {
             return "Deleted"
         case .updated:
             return "Updated"
+        case .disabled:
+            return "Disabled"
+        case .enabled:
+            return "Enabled"
+        case .unknown:
+            return "Unknown"
         }
     }
 }
@@ -127,6 +205,7 @@ public enum MessageFlag: String, Sendable, Codable, CaseIterable {
     case chequered = "CHEQUERED"
     case black = "BLACK"
     case blackOrange = "BLACK_ORANGE"
+    case clear = "CLEAR"
     
     public var color: String {
         switch self {
@@ -146,6 +225,8 @@ public enum MessageFlag: String, Sendable, Codable, CaseIterable {
             return "#000000"
         case .blackOrange:
             return "#FFA500"
+        case .clear:
+            return "#00FF00"
         }
     }
     
@@ -167,6 +248,8 @@ public enum MessageFlag: String, Sendable, Codable, CaseIterable {
             return "Black Flag"
         case .blackOrange:
             return "Black & Orange Flag"
+        case .clear:
+            return "Clear"
         }
     }
 }
@@ -179,5 +262,25 @@ public enum MessageScope: String, Sendable, Codable, CaseIterable {
     
     public var displayName: String {
         rawValue
+    }
+    
+    // Handle case-insensitive decoding
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        
+        // Try exact match first
+        if let scope = MessageScope(rawValue: rawValue) {
+            self = scope
+        } else {
+            // Try case-insensitive match
+            let lowercased = rawValue.lowercased()
+            switch lowercased {
+            case "track": self = .track
+            case "sector": self = .sector
+            case "driver": self = .driver
+            default: throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown scope: \(rawValue)")
+            }
+        }
     }
 }

@@ -10,11 +10,11 @@ import SwiftUI
 import AppKit
 
 struct TrackMapPiPWindow: Scene {
-    let appEnvironment: AppEnvironment
+    let appEnvironment: OptimizedAppEnvironment
     
     var body: some Scene {
         Window("Track Map", id: "track-map-pip") {
-            TrackMapPiPContent(appEnvironment: appEnvironment)
+          OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
                 .environment(appEnvironment)
         }
         .windowStyle(.hiddenTitleBar)

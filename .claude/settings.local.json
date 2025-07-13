@@ -14,7 +14,14 @@
       "Bash(curl:*)",
       "Bash(echo)",
       "Bash(grep:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(./.build/debug/F1DashServer:*)",
+      "Bash(vt title:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(chmod:*)",
+      "Bash(timeout 15 swift run:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
