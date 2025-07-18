@@ -10,8 +10,9 @@ import F1DashModels
 
 struct OptimizedTrackMapPiPContent: View {
     let appEnvironment: OptimizedAppEnvironment
-    @State private var trackData: [CGPoint] = []
-    @State private var hasInitialized = false
+    @State private var trackViewModel: OptimizedTrackMapViewModel?
+    @State private var animatedPositions: [String: CGPoint] = [:]
+    @State private var lastUpdateTime: Date = Date()
     
     var body: some View {
         ZStack {
@@ -21,16 +22,29 @@ struct OptimizedTrackMapPiPContent: View {
             
             // Track map content
             if let sessionInfo = appEnvironment.liveSessionState.sessionInfo,
-               let _ = sessionInfo.meeting?.circuit.key {
+               let _ = sessionInfo.meeting?.circuit.key,
+               let viewModel = trackViewModel,
+               viewModel.hasMapData {
                 GeometryReader { geometry in
-                    Canvas { context, size in
-                        // Draw simplified track
-                        drawSimplifiedTrack(in: context, size: size)
+                    ZStack {
+                        // Static track layer
+                        Canvas { context, size in
+                            drawRealTrack(in: context, size: size, viewModel: viewModel)
+                        }
+                        .padding(8)
                         
-                        // Draw driver positions with larger dots for visibility
-                        drawDriverPositions(in: context, size: size)
+                        // Dynamic driver layer with smooth animations
+                        // Access positionData to trigger updates
+                        let _ = appEnvironment.liveSessionState.positionData
+                        PiPDynamicDriverLayer(
+                            viewModel: viewModel,
+                            size: CGSize(
+                                width: geometry.size.width - 16,
+                                height: geometry.size.height - 16
+                            )
+                        )
+                        .padding(8)
                     }
-                    .padding(8)
                 }
                 
                 // Minimal overlay info
@@ -74,94 +88,169 @@ struct OptimizedTrackMapPiPContent: View {
             }
         }
         .onAppear {
-            loadTrackData()
+            if trackViewModel == nil {
+                trackViewModel = OptimizedTrackMapViewModel(
+                    liveSessionState: appEnvironment.liveSessionState,
+                    settingsStore: appEnvironment.settingsStore
+                )
+            }
         }
     }
     
-    private func loadTrackData() {
-        // Simple track data for PiP mode
-        // In a real implementation, this would load actual circuit data
-        // For now, create a simple oval track
-        let steps = 100
-        trackData = (0..<steps).map { i in
-            let angle = Double(i) / Double(steps) * 2 * .pi
-            let x = 0.5 + 0.3 * cos(angle)
-            let y = 0.5 + 0.4 * sin(angle)
-            return CGPoint(x: x, y: y)
-        }
-        hasInitialized = true
-    }
-    
-    private func drawSimplifiedTrack(in context: GraphicsContext, size: CGSize) {
-        guard !trackData.isEmpty else { return }
-        
-        // Draw track with thicker line for better visibility
+    private func drawRealTrack(in context: GraphicsContext, size: CGSize, viewModel: OptimizedTrackMapViewModel) {
+        // Draw track outline
         var path = Path()
-        
-        let scaledPoints = trackData.map { point in
-            CGPoint(x: point.x * size.width, y: point.y * size.height)
+        let rotatedPoints = viewModel.rotatedPoints.map { point in
+            viewModel.normalizedPosition(for: point, in: size)
         }
         
-        if let first = scaledPoints.first {
-            path.move(to: first)
-            for point in scaledPoints.dropFirst() {
+        if let firstPoint = rotatedPoints.first {
+            path.move(to: firstPoint)
+            for point in rotatedPoints.dropFirst() {
                 path.addLine(to: point)
             }
             path.closeSubpath()
         }
         
-        // Simple track rendering
+        // Simplified track rendering for PiP
         context.stroke(
             path,
-            with: .color(.secondary),
-            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+            with: .color(Color(white: 0.4)),
+            style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
         )
+        
+        // Draw sectors with status colors
+        let trackStatus = appEnvironment.liveSessionState.trackStatus
+        if let status = trackStatus?.status {
+            let statusColor: Color = {
+                switch status {
+                case .green: return Color(red: 0.0, green: 0.9, blue: 0.2)
+                case .yellow, .scYellow: return Color(red: 1.0, green: 0.8, blue: 0.0)
+                case .red, .scRed: return Color(red: 1.0, green: 0.2, blue: 0.2)
+                default: return .gray
+                }
+            }()
+            
+            context.stroke(
+                path,
+                with: .color(statusColor.opacity(0.6)),
+                style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+            )
+        }
+    }
+}
+
+// MARK: - PiP Dynamic Driver Layer
+
+struct PiPDynamicDriverLayer: View {
+    let viewModel: OptimizedTrackMapViewModel
+    let size: CGSize
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    
+    // Track animated positions separately from actual data
+    @State private var animatedPositions: [String: CGPoint] = [:]
+    
+    private var positionUpdateKey: String {
+        driverData.map { "\($0.driver.racingNumber):\($0.position.x),\($0.position.y)" }.joined()
     }
     
-    private func drawDriverPositions(in context: GraphicsContext, size: CGSize) {
-        let drivers = appEnvironment.liveSessionState.driverList
-        
-        for (_, driver) in drivers {
-            guard let position = appEnvironment.liveSessionState.position(for: driver.racingNumber),
-                  position.status == nil || position.status == "OnTrack" else { continue }
-            
-            let point = CGPoint(x: position.x * size.width, y: position.y * size.height)
-            let isFavorite = appEnvironment.settingsStore.favoriteDriverIDsString.contains(driver.racingNumber)
-            let dotSize: CGFloat = isFavorite ? 10 : 8
-            
-            let rect = CGRect(
-                x: point.x - dotSize/2,
-                y: point.y - dotSize/2,
-                width: dotSize,
-                height: dotSize
-            )
-            
-            // Draw driver dot
-            let teamColor = Color(hex: driver.teamColour) ?? .gray
-            context.fill(
-                Circle().path(in: rect),
-                with: .color(teamColor)
-            )
-            
-            // White border for visibility
-            context.stroke(
-                Circle().path(in: rect),
-                with: .color(.white),
-                lineWidth: 1
-            )
-            
-            // Show TLA only for favorite drivers in PiP mode
-            if isFavorite {
-                context.draw(
-                    Text(driver.tla)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white),
-                    at: CGPoint(
-                        x: point.x,
-                        y: point.y + dotSize + 4
-                    )
+    private var driverData: [(driver: Driver, position: PositionCar)] {
+        viewModel.driverPositions
+    }
+    
+    var body: some View {
+        ZStack {
+            ForEach(driverData, id: \.driver.racingNumber) { driver, position in
+                let normalizedPos = getNormalizedPosition(for: position)
+                let isOnTrack = position.status == nil || position.status == "OnTrack"
+                
+                PiPDriverMarker(
+                    driver: driver,
+                    teamColor: Color(hex: driver.teamColour) ?? .gray,
+                    position: animatedPositions[driver.racingNumber] ?? normalizedPos,
+                    isOnTrack: isOnTrack,
+                    isFavorite: appEnvironment.settingsStore.isFavoriteDriver(driver.racingNumber)
                 )
+                .animation(.linear(duration: 0.5), value: animatedPositions[driver.racingNumber])
             }
         }
+        .onChange(of: positionUpdateKey) { _, _ in
+            // Update positions when data changes
+            updateAnimatedPositions()
+        }
+        .onAppear {
+            // Set initial positions
+            updateAnimatedPositions()
+        }
+        .onDisappear {
+            // Clean up when view disappears
+            animatedPositions.removeAll()
+        }
+    }
+    
+    private func updateAnimatedPositions() {
+        for (driver, position) in driverData {
+            animatedPositions[driver.racingNumber] = getNormalizedPosition(for: position)
+        }
+    }
+    
+    private func getNormalizedPosition(for position: PositionCar) -> CGPoint {
+        guard let trackMap = viewModel.trackMap else {
+            return .zero
+        }
+        
+        // Rotate position according to track rotation
+        let rotatedPos = TrackMap.rotate(
+            x: position.x, y: position.y,
+            angle: trackMap.rotation + 90, // rotationFix
+            centerX: viewModel.centerX, centerY: viewModel.centerY
+        )
+        
+        return viewModel.normalizedPosition(for: rotatedPos, in: size)
+    }
+}
+
+// MARK: - PiP Driver Marker
+
+struct PiPDriverMarker: View {
+    let driver: Driver
+    let teamColor: Color
+    let position: CGPoint
+    let isOnTrack: Bool
+    let isFavorite: Bool
+    
+    var body: some View {
+        ZStack {
+            // Outer glow for PiP visibility
+            Circle()
+                .fill(teamColor.opacity(0.4))
+                .frame(width: 14, height: 14)
+                .blur(radius: 1)
+            
+            // Team color circle
+            Circle()
+                .fill(teamColor)
+                .frame(width: 10, height: 10)
+            
+            // White border for visibility
+            Circle()
+                .stroke(.white, lineWidth: 1)
+                .frame(width: 10, height: 10)
+            
+            // Driver number
+            Text(driver.racingNumber)
+                .font(.system(size: 6, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.8), radius: 1, x: 0, y: 0)
+            
+            // Favorite indicator
+            if isFavorite {
+                Circle()
+                    .stroke(Color.blue, lineWidth: 1)
+                    .frame(width: 14, height: 14)
+            }
+        }
+        .position(position)
+        .opacity(isOnTrack ? 1.0 : 0.4)
     }
 }

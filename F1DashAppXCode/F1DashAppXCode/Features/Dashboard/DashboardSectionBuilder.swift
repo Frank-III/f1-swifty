@@ -23,7 +23,7 @@ struct DashboardSectionBuilder {
                 TrackMapSection(showTrackMapFullScreen: $showTrackMapFullScreen)
                 
             case .liveTiming:
-                LiveTimingSection()
+                LiveTimingSection(shouldExpand: false)
                 
             case .raceControl:
                 RaceControlSection()

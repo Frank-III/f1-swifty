@@ -27,23 +27,34 @@ actor SSEClient {
     
   
     private var eventSource: EventSource?
-    private let serverURL = URL(string: "http://127.0.0.1:3000/v1/live/sse")!
+    private var serverURL: URL
     
     private var messageStream: AsyncStream<SSEMessage>?
     private var messageContinuation: AsyncStream<SSEMessage>.Continuation?
   
     // MARK: - Initialization
     
-    init() {
+    init(baseURL: String = "http://127.0.0.1:3000") {
+        self.serverURL = URL(string: "\(baseURL)/v1/live/sse")!
+    }
+    
+    func updateServerURL(_ baseURL: String) {
+        self.serverURL = URL(string: "\(baseURL)/v1/live/sse")!
+        print("SSEClient: Updated server URL to: \(self.serverURL)")
     }
     
     // MARK: - Connection
     
     func connect() async throws {
-        if await eventSource?.readyState == .open {
-          return
+        print("SSEClient: Connecting to \(serverURL)")
+        
+        // Always disconnect first to ensure clean state
+        if eventSource != nil {
+            print("SSEClient: Cleaning up existing connection")
+            await disconnect()
+            // Wait a bit for cleanup
+            try await Task.sleep(for: .milliseconds(100))
         }
-      
         
         let (stream, continuation) = AsyncStream<SSEMessage>.makeStream()
         self.messageStream = stream
@@ -78,20 +89,17 @@ actor SSEClient {
         try await Task.sleep(for: .milliseconds(500))
     }
     
-    func disconnect() {
+    func disconnect() async {
         // Store reference before clearing
-        let source = eventSource
         
         // Clear references first
+        await eventSource?.close()
         eventSource = nil
+        
+        // Finish the stream
         messageContinuation?.finish()
         messageContinuation = nil
         messageStream = nil
-        
-        // Then close the connection
-        Task {
-            await source?.close()
-        }
     }
     
     // MARK: - Messages
@@ -128,18 +136,18 @@ actor SSEClient {
             }
             
             print("SSEClient: Parsed event with \(json.keys.count) keys: \(json.keys.joined(separator: ", "))")
-            
-            // Check if raceControlMessages is present
-            if let raceControl = json["raceControlMessages"] {
-                print("SSEClient: Found raceControlMessages in data")
-                // Try to see what's in it
-                if let raceControlDict = raceControl as? [String: Any] {
-                    print("SSEClient: raceControlMessages keys: \(raceControlDict.keys.joined(separator: ", "))")
-                    if let messages = raceControlDict["messages"] as? [[String: Any]] {
-                        print("SSEClient: Found \(messages.count) race control messages")
-                    }
-                }
-            }
+//            
+//            // Check if raceControlMessages is present
+//            if let raceControl = json["raceControlMessages"] {
+//                print("SSEClient: Found raceControlMessages in data")
+//                // Try to see what's in it
+//                if let raceControlDict = raceControl as? [String: Any] {
+//                    print("SSEClient: raceControlMessages keys: \(raceControlDict.keys.joined(separator: ", "))")
+//                    if let messages = raceControlDict["messages"] as? [[String: Any]] {
+//                        print("SSEClient: Found \(messages.count) race control messages")
+//                    }
+//                }
+//            }
             
             // Send the appropriate message type through the stream
             if eventType == "initial" {

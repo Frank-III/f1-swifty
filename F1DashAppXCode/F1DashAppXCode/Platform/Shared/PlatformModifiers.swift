@@ -45,7 +45,7 @@ struct PlatformGlassEffectModifier: ViewModifier {
     func body(content: Content) -> some View {
         #if os(iOS) || os(macOS)
         if #available(iOS 26, macOS 26, *) {
-            content.glassEffect()
+            content.glassEffect(.regular.interactive())
         } else {
             content
         }

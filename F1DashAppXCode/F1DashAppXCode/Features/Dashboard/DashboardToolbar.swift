@@ -17,16 +17,23 @@ struct DashboardToolbar: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .principal) {
             // Session info as subtitle
-            if appEnvironment.connectionStatus == .connected {
-                VStack(spacing: 2) {
-                    Text("F1 Dashboard")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
+            VStack(spacing: 2) {
+                Text("F1 Dashboard")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                if appEnvironment.connectionStatus == .connected {
                     Text(sessionSubtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                
+                #if os(macOS)
+                // Show server URL on macOS
+                Text(appEnvironment.settingsStore.serverURL)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                #endif
             }
         }
         

@@ -16,9 +16,9 @@ struct RaceControlView: View {
     
     private var raceControlMessages: RaceControlMessages? {
         let messages = appEnvironment.liveSessionState.raceControlMessages
-        print("RaceControlView: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
+//        print("RaceControlView: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
         if messages == nil {
-            print("RaceControlView: Checking state keys: \(appEnvironment.liveSessionState.debugStateKeys)")
+//            print("RaceControlView: Checking state keys: \(appEnvironment.liveSessionState.debugStateKeys)")
         }
         return messages
     }
@@ -56,14 +56,14 @@ struct RaceControlView: View {
         .padding()
         .background(Color.platformBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .onAppear {
+//        .onAppear {
             // Set up a timer to check for updates periodically
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-                print("RaceControlView Timer: Checking for updates...")
-                let messages = appEnvironment.liveSessionState.raceControlMessages
-                print("RaceControlView Timer: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
-            }
-        }
+//            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+//                print("RaceControlView Timer: Checking for updates...")
+//                let messages = appEnvironment.liveSessionState.raceControlMessages
+//                print("RaceControlView Timer: messages = \(messages != nil ? "exists with \(messages!.messages.count) items" : "nil")")
+//            }
+//        }
     }
 }
 

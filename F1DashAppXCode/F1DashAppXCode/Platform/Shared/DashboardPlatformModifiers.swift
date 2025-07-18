@@ -147,6 +147,7 @@ struct iOS26TabAccessoryModifier: ViewModifier {
     @Binding var showWeatherSheet: Bool
     @Binding var showTrackMapFullScreen: Bool
     @Binding var selectedDashboardSection: DashboardSection
+    var layoutManager: DashboardLayoutManager? = nil
     
     func body(content: Content) -> some View {
         #if os(iOS)
@@ -157,7 +158,8 @@ struct iOS26TabAccessoryModifier: ViewModifier {
 //                    if appEnvironment.connectionStatus != .disconnected && selectedTab == 0 {
                         DashboardSectionPills(
                           selectedSection: $selectedDashboardSection,
-                            showTrackMapFullScreen: $showTrackMapFullScreen
+                            showTrackMapFullScreen: $showTrackMapFullScreen,
+                            layoutManager: layoutManager
                         )
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

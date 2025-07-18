@@ -21,15 +21,40 @@ struct TrackMapSection: View {
                 Spacer()
                 
                 if appEnvironment.connectionStatus == .connected {
-                    #if !os(macOS)
+                    #if os(iOS) || os(iPadOS)
                     // Picture in Picture button
                     Button {
+                        // Stop video PiP if active before starting regular PiP
+                        if appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive {
+                            appEnvironment.videoBasedPictureInPictureManager.stopVideoPiP()
+                        }
                         appEnvironment.pictureInPictureManager.togglePiP()
                     } label: {
                         Image(systemName: appEnvironment.pictureInPictureManager.isPiPActive ? "pip.exit" : "pip.enter")
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PlatformGlassButtonStyle())
+                    .disabled(appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive)
+                    
+                    // Video-based PiP button (for background support)
+                    Button {
+                        Task {
+                            if appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive {
+                                appEnvironment.videoBasedPictureInPictureManager.stopVideoPiP()
+                            } else {
+                                // Stop regular PiP if active before starting video PiP
+                                if appEnvironment.pictureInPictureManager.isPiPActive {
+                                    appEnvironment.pictureInPictureManager.deactivatePiP()
+                                }
+                                await appEnvironment.videoBasedPictureInPictureManager.startVideoPiP()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive ? "tv.slash" : "tv")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
+                    .disabled(appEnvironment.pictureInPictureManager.isPiPActive)
                     #endif
                     
                     // Full screen button

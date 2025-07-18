@@ -19,6 +19,7 @@ public struct MainTabView: View {
     @State private var showWeatherSheet = false
     @State private var showTrackMapFullScreen = false
     @State private var selectedDashboardSection: DashboardSection = .all
+    @State private var dashboardLayoutManager = DashboardLayoutManager()
     
     public var body: some View {
         Group {
@@ -47,7 +48,8 @@ public struct MainTabView: View {
                         UniversalDashboardView(
                             selectedSection: $selectedDashboardSection,
                             showWeatherSheet: $showWeatherSheet,
-                            showTrackMapFullScreen: $showTrackMapFullScreen
+                            showTrackMapFullScreen: $showTrackMapFullScreen,
+                            layoutManager: dashboardLayoutManager
                         )
                         .navigationTitle("Dashboard")
                     case 1:
@@ -74,7 +76,8 @@ public struct MainTabView: View {
                     UniversalDashboardView(
                         selectedSection: $selectedDashboardSection,
                         showWeatherSheet: $showWeatherSheet,
-                        showTrackMapFullScreen: $showTrackMapFullScreen
+                        showTrackMapFullScreen: $showTrackMapFullScreen,
+                        layoutManager: dashboardLayoutManager
                     )
                 }
                 .tabItem {
@@ -111,7 +114,8 @@ public struct MainTabView: View {
                 selectedTab: $selectedTab,
                 showWeatherSheet: $showWeatherSheet,
                 showTrackMapFullScreen: $showTrackMapFullScreen,
-                selectedDashboardSection: $selectedDashboardSection
+                selectedDashboardSection: $selectedDashboardSection,
+                layoutManager: dashboardLayoutManager
             ))
 //            .modifier(PlatformTabBarModifier())
             .onAppear {

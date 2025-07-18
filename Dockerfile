@@ -3,10 +3,10 @@ FROM swift:6.1.2-jammy AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    libcurl4-openssl-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+  libssl-dev \
+  libcurl4-openssl-dev \
+  git \
+  && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -25,9 +25,9 @@ FROM swift:6.0-jammy-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libssl3 \
-    libcurl4 \
-    && rm -rf /var/lib/apt/lists/*
+  libssl3 \
+  libcurl4 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN useradd -m -u 1001 -s /bin/bash f1dash
@@ -48,13 +48,13 @@ RUN chown -R f1dash:f1dash /app
 USER f1dash
 
 # Expose port
-EXPOSE 8080
+EXPOSE 3000
 
 # Set environment variables
 ENV LOG_LEVEL=info
 ENV HOST=0.0.0.0
-ENV PORT=8080
+ENV PORT=3000
 
 # Run the server
 ENTRYPOINT ["/app/F1DashServer"]
-CMD ["--host", "0.0.0.0", "--port", "8080"]
+CMD ["--host", "0.0.0.0", "--port", "3000"]

@@ -10,6 +10,18 @@ import SwiftUI
 import AppKit
 #endif
 
+// TEST MODE - Simple isolated track map test
+@main
+struct F1DashAppXCodeApp: App {
+    var body: some Scene {
+        WindowGroup {
+            TestIsolatedTrackMap()
+                .frame(width: 800, height: 600)
+        }
+    }
+}
+
+/* ORIGINAL APP CODE - COMMENTED OUT FOR TESTING
 @main
 struct F1DashAppXCodeApp: App {
     #if os(macOS)
@@ -29,10 +41,9 @@ struct F1DashAppXCodeApp: App {
         
         // Main window scene (hidden by default)
         WindowGroup("F1 Dashboard", id: "dashboard") {
-          MainTabView()
-              .environment(appEnvironment)
-//            MacOSDashboardView()
-//                .environment(appEnvironment)
+           MainTabView()
+               .environment(appEnvironment)
+//          TestStateUpdateView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -53,20 +64,11 @@ struct F1DashAppXCodeApp: App {
                 }
         }
         .menuBarExtraStyle(.window)
-        
-        // Test window for debugging race control
-        WindowGroup(id: "test-race-control") {
-            TestRaceControlView()
-                .environment(appEnvironment)
-        }
         #else
         // iOS/iPadOS main window
         WindowGroup {
-            MainTabView()
-                .environment(appEnvironment)
-                #if !os(macOS)
-               .pictureInPictureOverlay(appEnvironment: appEnvironment)
-                #endif
+          MainTabView()
+              .environment(appEnvironment)
         }
         #endif
     }
@@ -258,3 +260,4 @@ extension F1DashAppXCodeApp {
     }
 }
 #endif
+*/

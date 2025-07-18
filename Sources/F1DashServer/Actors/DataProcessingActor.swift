@@ -119,7 +119,23 @@ actor DataProcessingActor {
             }
           } else {
             let transformedKey = DataTransformation.toCamelCase(key)
-            if var valueDict = value as? [String: Any] {
+            
+            // Special handling for TopThree which has nested structure with Lines array
+            if key == "TopThree", let topThreeDict = value as? [String: Any] {
+              var transformedTopThree: [String: Any] = [:]
+              for (topThreeKey, topThreeValue) in topThreeDict {
+                if topThreeKey == "_kf" { continue }
+                let transformedTopThreeKey = DataTransformation.toCamelCase(topThreeKey)
+                
+                // Transform Lines array if present
+                if topThreeKey == "Lines", let linesArray = topThreeValue as? [[String: Any]] {
+                  transformedTopThree[transformedTopThreeKey] = linesArray.map(DataTransformation.transformKeys)
+                } else {
+                  transformedTopThree[transformedTopThreeKey] = topThreeValue
+                }
+              }
+              transformedState[transformedKey] = transformedTopThree
+            } else if var valueDict = value as? [String: Any] {
               valueDict = DataTransformation.transformKeys(valueDict)
               transformedState[transformedKey] = valueDict
             } else {

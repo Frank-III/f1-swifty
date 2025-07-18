@@ -11,14 +11,20 @@ struct LiveTimingSection: View {
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
+    private let tableContentWidth: CGFloat = 650 // Content width without padding
+    private let horizontalPadding: CGFloat = 16 // Match the row padding
+    let shouldExpand : Bool
+    
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
+            // Header with padding
             HStack {
                 Text("Live Timing")
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
             }
+            .padding()
             
             if appEnvironment.connectionStatus == .disconnected {
                 DisconnectedStateView(
@@ -26,34 +32,33 @@ struct LiveTimingSection: View {
                     message: "Connect to live session to view timing data",
                     minHeight: 300
                 )
+                .padding(.horizontal)
+                .padding(.bottom)
             } else {
-                // Responsive driver list with horizontal scrolling
-                #if os(iOS)
-                if horizontalSizeClass == .compact {
-                    // Compact layout for phones with proper scrolling
-                    ScrollView([.horizontal, .vertical], showsIndicators: true) {
-                        EnhancedDriverListView()
-                            .frame(minWidth: 850) // Fixed minimum width
+                // Content with proper scrolling
+                GeometryReader { geometry in
+                    let totalTableWidth = tableContentWidth + (horizontalPadding * 2)
+                    let needsHorizontalScroll = geometry.size.width < totalTableWidth
+                    
+                    if needsHorizontalScroll {
+                        ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                            EnhancedDriverListView()
+                                .frame(width: totalTableWidth)
+                        }
+                    } else {
+                        ScrollView(.vertical, showsIndicators: true) {
+                            HStack {
+                                Spacer()
+                                EnhancedDriverListView()
+                                Spacer()
+                            }
+                            .frame(width: geometry.size.width)
+                        }
                     }
-                    .frame(minHeight: 300, maxHeight: 500)
-                } else {
-                    // Regular layout for iPads
-                    ScrollView([.horizontal, .vertical]) {
-                        EnhancedDriverListView()
-                            .frame(minWidth: 800, minHeight: 400)
-                    }
-                    .frame(minHeight: 400, maxHeight: 600)
                 }
-                #else
-                ScrollView([.horizontal, .vertical]) {
-                    EnhancedDriverListView()
-                        .frame(minWidth: 600, minHeight: 400)
-                }
-                .frame(height: 400)
-                #endif
+                .frame(minHeight: 400, maxHeight: shouldExpand ? .infinity: 600)
             }
         }
-        .padding()
         .modifier(PlatformGlassCardModifier())
     }
 }

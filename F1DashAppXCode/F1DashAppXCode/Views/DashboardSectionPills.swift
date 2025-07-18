@@ -18,6 +18,32 @@ struct DashboardSectionPills: View {
     @Binding var selectedSection: DashboardSection
     @Binding var showTrackMapFullScreen: Bool
     @State private var pulseAnimation = false
+    var layoutManager: DashboardLayoutManager? = nil
+    
+    private func getSectionsInOrder() -> [DashboardSection] {
+        var sections: [DashboardSection] = [.all]
+        
+        if let layoutManager = layoutManager {
+            // Use the order from layout manager
+            for sectionItem in layoutManager.sections where sectionItem.isVisible {
+                switch sectionItem.type {
+                case .weather:
+                    sections.append(.weather)
+                case .trackMap:
+                    sections.append(.trackMap)
+                case .liveTiming:
+                    sections.append(.liveTiming)
+                case .raceControl:
+                    sections.append(.raceControl)
+                }
+            }
+        } else {
+            // Default order
+            sections.append(contentsOf: [.weather, .trackMap, .liveTiming, .raceControl])
+        }
+        
+        return sections
+    }
     
     var body: some View {
         HStack(spacing: 8) {
@@ -51,7 +77,8 @@ struct DashboardSectionPills: View {
   
   @ViewBuilder
   var expandedView: some View {
-    ForEach([DashboardSection.all, .weather, .trackMap, .liveTiming, .raceControl], id: \.self) { section in
+    let sections = getSectionsInOrder()
+    ForEach(sections, id: \.self) { section in
         Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 selectedSection = section
@@ -83,7 +110,8 @@ struct DashboardSectionPills: View {
   
   @ViewBuilder
   var inlineView: some View {
-    ForEach([DashboardSection.all, .weather, .trackMap, .liveTiming, .raceControl], id: \.self) { section in
+    let sections = getSectionsInOrder()
+    ForEach(sections, id: \.self) { section in
         Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 selectedSection = section

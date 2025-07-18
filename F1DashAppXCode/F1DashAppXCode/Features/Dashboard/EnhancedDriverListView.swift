@@ -12,26 +12,30 @@ struct EnhancedDriverListView: View {
     // @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
+    // Define the table content width
+    private let tableContentWidth: CGFloat = 650
+    
     var body: some View {
         VStack(spacing: 0) {
             // Enhanced driver table header (always visible)
             if appEnvironment.settingsStore.showDriverTableHeader {
                 EnhancedDriverTableHeader()
-                    .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(Color.gray.opacity(0.1))
+                    .frame(width: tableContentWidth)
                 
                 Divider()
+                    .frame(width: tableContentWidth)
             }
             
-            // Driver rows with horizontal scrolling capability
-            LazyVStack(spacing: 0) {
-                ForEach(appEnvironment.liveSessionState.sortedDrivers) { driver in
-                    EnhancedDriverRowView(driver: driver)
-                    
-                    if driver.id != appEnvironment.liveSessionState.sortedDrivers.last?.id {
-                        Divider()
-                    }
+            // Driver rows
+            ForEach(appEnvironment.liveSessionState.sortedDrivers) { driver in
+                EnhancedDriverRowView(driver: driver)
+                    .frame(width: tableContentWidth)
+                
+                if driver.id != appEnvironment.liveSessionState.sortedDrivers.last?.id {
+                    Divider()
+                        .frame(width: tableContentWidth)
                 }
             }
         }
@@ -110,6 +114,7 @@ struct EnhancedDriverTableHeader: View {
                 .fontWeight(.bold)
                 .frame(width: 40)
         }
+        .padding(.horizontal, 16)
         .foregroundStyle(.secondary)
     }
 }

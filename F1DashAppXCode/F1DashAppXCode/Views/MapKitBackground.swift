@@ -62,8 +62,8 @@ struct MapKitBackground: View {
                 // Dark background base
                 Color.black.opacity(0.8)
                 
-                let _ = print("MapKitBackground: Country name: \(appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name ?? "nil")")
-                let _ = print("MapKitBackground: Has snapshot: \(mapSnapshot != nil)")
+//                let _ = print("MapKitBackground: Country name: \(appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name ?? "nil")")
+//                let _ = print("MapKitBackground: Has snapshot: \(mapSnapshot != nil)")
                 
                 if let snapshot = mapSnapshot {
                     #if os(iOS)
@@ -119,8 +119,8 @@ struct MapKitBackground: View {
             }
         }
         .ignoresSafeArea()
-        .onChange(of: appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name) { _, newValue in
-            if newValue != nil {
+        .onChange(of: appEnvironment.liveSessionState.sessionInfo?.meeting?.country.name) { oldValue, newValue in
+            if newValue != nil  && oldValue != newValue {
                 mapSnapshot = nil
                 // Will regenerate on next appearance
             }

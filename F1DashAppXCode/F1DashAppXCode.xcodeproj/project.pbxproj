@@ -35,14 +35,45 @@
 		09CF06F12E15A69A0027A478 /* F1DashAppXCodeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = F1DashAppXCodeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		09644A902E277AE60073D5D1 /* Exceptions for "F1DashAppXCode" folder in "F1DashAppXCode" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 09CF06D82E15A6980027A478 /* F1DashAppXCode */;
+		};
+		09C91EC12E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				IsolatedTrackMapTest.swift,
+			);
+			target = 09CF06E62E15A69A0027A478 /* F1DashAppXCodeTests */;
+		};
+		09C91EC22E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				IsolatedTrackMapTest.swift,
+			);
+			target = 09CF06F02E15A69A0027A478 /* F1DashAppXCodeUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		09CF06DB2E15A6980027A478 /* F1DashAppXCode */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09644A902E277AE60073D5D1 /* Exceptions for "F1DashAppXCode" folder in "F1DashAppXCode" target */,
+			);
 			path = F1DashAppXCode;
 			sourceTree = "<group>";
 		};
 		09CF06EA2E15A69A0027A478 /* F1DashAppXCodeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09C91EC12E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeTests" target */,
+				09C91EC22E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeUITests" target */,
+			);
 			path = F1DashAppXCodeTests;
 			sourceTree = "<group>";
 		};
@@ -421,6 +452,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = F1DashAppXCode/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -464,6 +496,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = F1DashAppXCode/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

@@ -8,6 +8,7 @@
 import SwiftUI
 import Observation
 import F1DashModels
+import Combine
 
 @MainActor
 @Observable
@@ -20,6 +21,7 @@ public final class OptimizedAppEnvironment {
     let pictureInPictureManager: PictureInPictureManager
     let systemPictureInPictureManager: SystemPictureInPictureManager?
     let liveActivityManager: LiveActivityManager?
+    let videoBasedPictureInPictureManager: VideoBasedPictureInPictureManager
     // private var notificationManager: NotificationManager?
     private var notificationManager: OptimizedNotificationManager?
     let soundManager: SoundManager
@@ -38,17 +40,19 @@ public final class OptimizedAppEnvironment {
     private var updateTimer: Timer?
     private let updateInterval: TimeInterval = 0.1 // 100ms update cycle
     private var messageProcessingTask: Task<Void, Never>?
+    private var serverURLObservationTask: Task<Void, Never>?
     
     // MARK: - Initialization
     
     public init() {
-        self.sseClient = SSEClient()
-        self.dataBuffer = OptimizedDataBuffer()
         self.settingsStore = SettingsStore()
+        self.sseClient = SSEClient(baseURL: settingsStore.serverURL)
+        self.dataBuffer = OptimizedDataBuffer()
         self.pictureInPictureManager = PictureInPictureManager()
         self.liveSessionState = OptimizedLiveSessionState()
         self.soundManager = SoundManager()
         self.racePreferences = RacePreferences()
+        self.videoBasedPictureInPictureManager = VideoBasedPictureInPictureManager()
         
         // Initialize managers only on iOS
         #if !os(macOS)
@@ -65,6 +69,7 @@ public final class OptimizedAppEnvironment {
         self.pictureInPictureManager.appEnvironment = self
         self.systemPictureInPictureManager?.appEnvironment = self  // This one now accepts OptimizedAppEnvironment
         self.liveActivityManager?.appEnvironment = self
+        self.videoBasedPictureInPictureManager.appEnvironment = self
         
         // Initialize notification manager and start update timer
         Task { @MainActor in
@@ -73,6 +78,7 @@ public final class OptimizedAppEnvironment {
             // self.notificationManager = NotificationManager(appEnvironment: self)
             self.notificationManager = OptimizedNotificationManager(appEnvironment: self)
             self.startUpdateTimer()
+            self.startServerURLObservation()
             await checkAutoConnect()
         }
     }
@@ -83,6 +89,7 @@ public final class OptimizedAppEnvironment {
     // MARK: - Update Timer
     
     private func startUpdateTimer() {
+        print("OptimizedAppEnvironment: Starting update timer with interval \(updateInterval)s")
         updateTimer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.processBufferedData()
@@ -90,8 +97,42 @@ public final class OptimizedAppEnvironment {
         }
     }
     
+    // MARK: - Server URL Observation
+    
+    private func startServerURLObservation() {
+        serverURLObservationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            
+            var previousURL = settingsStore.serverURL
+            
+            // Use debounce to avoid reconnecting on every keystroke
+            for await _ in settingsStore.$serverURL.publisher
+                .debounce(for: .seconds(1.5), scheduler: DispatchQueue.main)
+                .values {
+                
+                let currentURL = settingsStore.serverURL
+                
+                // Only reconnect if URL actually changed and we were connected
+                if currentURL != previousURL && connectionStatus == .connected {
+                    print("Server URL changed from \(previousURL) to \(currentURL), reconnecting...")
+                    
+                    // Update SSE client with new URL
+                    await sseClient.updateServerURL(currentURL)
+                    
+                    // Disconnect and reconnect
+                    await disconnect()
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    await connect()
+                }
+                
+                previousURL = currentURL
+            }
+        }
+    }
+    
     private func processBufferedData() async {
         guard connectionStatus == .connected else {
+          print("OptimizedAppEnvironment: processBufferedData called but not connected (\(connectionStatus))")
           return
         }
         let delay = settingsStore.dataDelay
@@ -99,14 +140,14 @@ public final class OptimizedAppEnvironment {
         if delay == 0 {
             // No delay - use latest data
             if let latestData = await dataBuffer.latest() {
-//                print("OptimizedAppEnvironment: Processing latest data with \(latestData.count) keys: \(latestData.keys.joined(separator: ", "))")
+                print("OptimizedAppEnvironment: Processing latest data with \(latestData.count) keys: \(latestData.keys.joined(separator: ", "))")
                 if latestData.keys.contains("raceControlMessages") {
-//                    print("OptimizedAppEnvironment: Processing data contains raceControlMessages!")
+                    print("OptimizedAppEnvironment: Processing data contains raceControlMessages!")
                 }
                 liveSessionState.applyPartialUpdate(latestData)
                 checkForNotifications()
             } else {
-//                print("OptimizedAppEnvironment: No latest data available")
+                print("OptimizedAppEnvironment: No latest data available")
             }
         } else {
             // Apply delay - get delayed data
@@ -118,7 +159,7 @@ public final class OptimizedAppEnvironment {
                 // Cleanup old buffer data
                 await dataBuffer.cleanup(delay)
             } else {
-//                print("OptimizedAppEnvironment: No delayed data available for \(delay)s delay")
+                print("OptimizedAppEnvironment: No delayed data available for \(delay)s delay")
             }
         }
     }
@@ -140,7 +181,7 @@ public final class OptimizedAppEnvironment {
         scheduleLoadingStatus = .loading
         
         do {
-            let serverURL = "http://localhost:3000"
+            let serverURL = settingsStore.serverURL
             let url = URL(string: "\(serverURL)/api/schedule")!
             
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -177,10 +218,21 @@ public final class OptimizedAppEnvironment {
         
         connectionStatus = .connecting
         
+        // Ensure SSE client has latest URL
+        await sseClient.updateServerURL(settingsStore.serverURL)
+        
         do {
             try await sseClient.connect()
             connectionStatus = .connected
-            
+
+            // Restart periodic update timer if it was stopped during a previous disconnect
+            if updateTimer == nil {
+                print("OptimizedAppEnvironment: No update timer found, starting new one")
+                startUpdateTimer()
+            } else {
+                print("OptimizedAppEnvironment: Update timer already exists, not starting new one")
+            }
+
             // Start data processing in background
             messageProcessingTask = Task.detached(priority: .high) { [weak self] in
                 await self?.startDataProcessing()
@@ -192,6 +244,7 @@ public final class OptimizedAppEnvironment {
     }
     
     func disconnect() async {
+        print("OptimizedAppEnvironment: Disconnecting - invalidating update timer")
         updateTimer?.invalidate()
         updateTimer = nil
         messageProcessingTask?.cancel()
@@ -199,6 +252,14 @@ public final class OptimizedAppEnvironment {
         await sseClient.disconnect()
         await dataBuffer.clear()
         connectionStatus = .disconnected
+        
+        // Clean up PiP if active
+        if videoBasedPictureInPictureManager.isVideoPiPActive {
+            videoBasedPictureInPictureManager.stopVideoPiP()
+        }
+        
+        // Clear animation state to ensure fresh start on reconnect
+        liveSessionState.clearState()
     }
     
     // MARK: - Data Processing

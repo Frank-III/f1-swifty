@@ -18,7 +18,20 @@ final class OptimizedLiveSessionState {
     private var lastRaceControlMessageCount: Int = 0
     
     // Force UI updates when state changes
-    private var updateCounter: Int = 0
+    var updateCounter: Int = 0
+    
+    // MARK: - State Management
+    
+    func clearState() {
+        print("OptimizedLiveSessionState: Clearing state")
+        dataState.removeAll()
+        cache = Cache()
+        stateVersions.removeAll()
+        pendingUpdates.removeAll()
+        lastRaceControlMessageCount = 0
+        updateCounter += 1 // Force UI update
+        print("OptimizedLiveSessionState: State cleared, update counter incremented to \(updateCounter)")
+    }
     
     // MARK: - Cache Storage
     
@@ -60,7 +73,9 @@ final class OptimizedLiveSessionState {
     var driverList: [String: Driver] {
         // Access updateCounter to ensure UI updates
         _ = updateCounter
-        return getCached("driverList", cache: \.driverList) { self.cache.driverList = $0 } ?? [:]
+        let result = getCached("driverList", cache: \.driverList) { self.cache.driverList = $0 } ?? [:]
+        print("OptimizedLiveSessionState: driverList accessed, found \(result.count) drivers")
+        return result
     }
     
     var timingData: TimingData? {
@@ -128,6 +143,8 @@ final class OptimizedLiveSessionState {
     // MARK: - Update Methods
     
     func setFullState(_ state: [String: Any]) {
+        print("OptimizedLiveSessionState: Setting full state with \(state.keys.count) keys: \(state.keys.joined(separator: ", "))")
+        
         // Cancel any pending batch updates
         updateTimer?.invalidate()
         pendingUpdates.removeAll()
@@ -139,26 +156,35 @@ final class OptimizedLiveSessionState {
         for key in state.keys {
             stateVersions[key, default: 0] += 1
         }
+        // Force UI update after full state set
+        updateCounter += 1
+        print("OptimizedLiveSessionState: Full state set, update counter incremented to \(updateCounter)")
     }
     
     func applyPartialUpdate(_ update: [String: Any]) {
+        print("OptimizedLiveSessionState: applyPartialUpdate called with keys: \(update.keys.joined(separator: ", "))")
+        
         // Add to pending updates for batching
         pendingUpdates.append(update)
+        print("OptimizedLiveSessionState: Added to pendingUpdates, total pending: \(pendingUpdates.count)")
         
         // Schedule batch processing if not already scheduled
         if updateTimer == nil {
+            print("OptimizedLiveSessionState: Scheduling batch processing timer")
             updateTimer = Timer.scheduledTimer(withTimeInterval: batchInterval, repeats: false) { [weak self] _ in
                 Task { @MainActor in
                     self?.processBatchedUpdates()
                 }
             }
+        } else {
+            print("OptimizedLiveSessionState: Timer already scheduled, not scheduling new one")
         }
     }
     
     private func processBatchedUpdates() {
         guard !pendingUpdates.isEmpty else { return }
         
-//        print("OptimizedLiveSessionState: Processing \(pendingUpdates.count) batched updates")
+        print("OptimizedLiveSessionState: Processing \(pendingUpdates.count) batched updates")
         
         // Merge all pending updates
         var mergedUpdate: [String: Any] = [:]
@@ -166,7 +192,7 @@ final class OptimizedLiveSessionState {
             DataTransformation.mergeStates(&mergedUpdate, with: update)
         }
         
-//        print("OptimizedLiveSessionState: Merged updates contain keys: \(mergedUpdate.keys.joined(separator: ", "))")
+        print("OptimizedLiveSessionState: Merged updates contain keys: \(mergedUpdate.keys.joined(separator: ", "))")
         
         // Apply merged update to state
         DataTransformation.mergeStates(&dataState, with: mergedUpdate)
@@ -176,13 +202,18 @@ final class OptimizedLiveSessionState {
             stateVersions[key, default: 0] += 1
         }
         
+        // Post notification for position data updates
+        if mergedUpdate.keys.contains("positionData") {
+            NotificationCenter.default.post(name: Notification.Name("positionDataUpdated"), object: nil)
+        }
+        
         // Clear pending updates
         pendingUpdates.removeAll()
         updateTimer = nil
         
         // Force UI update
         updateCounter += 1
-//        print("OptimizedLiveSessionState: Update counter incremented to \(updateCounter)")
+        print("OptimizedLiveSessionState: Update counter incremented to \(updateCounter)")
     }
     
     func checkForNewRaceControlMessages() -> Bool {
@@ -238,7 +269,7 @@ final class OptimizedLiveSessionState {
             if let positionDict = value as? [String: Any] {
                 // First check if we have the direct array (from initial state)
                 if let positionArray = positionDict["positionData"] as? [[String: Any]] {
-                    print("OptimizedLiveSessionState: Found nested position array with \(positionArray.count) entries")
+//                    print("OptimizedLiveSessionState: Found nested position array with \(positionArray.count) entries")
                     
                     // The PositionData model expects: { "position": [...] }
                     let wrappedData: [String: Any] = ["position": positionArray]
@@ -247,7 +278,7 @@ final class OptimizedLiveSessionState {
                         let data = try JSONSerialization.data(withJSONObject: wrappedData)
                         let decoder = JSONDecoder()
                         let decoded = try decoder.decode(T.self, from: data)
-                        print("OptimizedLiveSessionState: Successfully decoded positionData")
+//                        print("OptimizedLiveSessionState: Successfully decoded positionData")
                         
                         if let positionData = decoded as? PositionData {
                             print("  Position count: \(positionData.position?.count ?? 0)")
@@ -258,7 +289,7 @@ final class OptimizedLiveSessionState {
                         
                         return decoded
                     } catch {
-                        print("OptimizedLiveSessionState: Failed to decode positionData: \(error)")
+//                        print("OptimizedLiveSessionState: Failed to decode positionData: \(error)")
                         // Don't fall through - return nil for position data
                         return nil
                     }
@@ -266,7 +297,7 @@ final class OptimizedLiveSessionState {
             }
             // Also handle the case where value is directly the array (shouldn't happen but let's be safe)
             else if let positionArray = value as? [[String: Any]] {
-                print("OptimizedLiveSessionState: Found direct position array with \(positionArray.count) entries")
+//                print("OptimizedLiveSessionState: Found direct position array with \(positionArray.count) entries")
                 
                 let wrappedData: [String: Any] = ["position": positionArray]
                 
@@ -274,24 +305,24 @@ final class OptimizedLiveSessionState {
                     let data = try JSONSerialization.data(withJSONObject: wrappedData)
                     let decoder = JSONDecoder()
                     let decoded = try decoder.decode(T.self, from: data)
-                    print("OptimizedLiveSessionState: Successfully decoded positionData from direct array")
+//                    print("OptimizedLiveSessionState: Successfully decoded positionData from direct array")
                     
                     if let positionData = decoded as? PositionData {
-                        print("  Position count: \(positionData.position?.count ?? 0)")
+//                        print("  Position count: \(positionData.position?.count ?? 0)")
                         if let firstPos = positionData.position?.first {
-                            print("  First position has \(firstPos.entries.count) drivers")
+//                            print("  First position has \(firstPos.entries.count) drivers")
                         }
                     }
                     
                     return decoded
                 } catch {
-                    print("OptimizedLiveSessionState: Failed to decode positionData from direct array: \(error)")
+//                    print("OptimizedLiveSessionState: Failed to decode positionData from direct array: \(error)")
                     return nil
                 }
             }
             
             // If we get here for position data, it means the structure is not what we expected
-            print("OptimizedLiveSessionState: Position data has unexpected structure")
+//            print("OptimizedLiveSessionState: Position data has unexpected structure")
             return nil
         }
         
@@ -299,13 +330,13 @@ final class OptimizedLiveSessionState {
             let data = try JSONSerialization.data(withJSONObject: value)
             let decoder = JSONDecoder()
             let decoded = try decoder.decode(T.self, from: data)
-            print("OptimizedLiveSessionState: Successfully decoded \(key)")
+//            print("OptimizedLiveSessionState: Successfully decoded \(key)")
             
             // Special logging for race control messages
             if key == "raceControlMessages", let messages = decoded as? RaceControlMessages {
-                print("OptimizedLiveSessionState: RaceControlMessages decoded with \(messages.messages.count) messages")
+//                print("OptimizedLiveSessionState: RaceControlMessages decoded with \(messages.messages.count) messages")
                 if !messages.messages.isEmpty {
-                    print("First message: \(messages.messages.first!.message)")
+//                    print("First message: \(messages.messages.first!.message)")
                 }
             }
             

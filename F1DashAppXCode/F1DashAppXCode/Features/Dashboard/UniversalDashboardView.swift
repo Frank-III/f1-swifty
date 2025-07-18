@@ -15,7 +15,7 @@ struct UniversalDashboardView: View {
     @Binding var showWeatherSheet: Bool
     @Binding var showTrackMapFullScreen: Bool
     @State private var showRacePredictionSheet = false
-    @State private var layoutManager = DashboardLayoutManager()
+    @State var layoutManager: DashboardLayoutManager
     @State private var trackImageService = TrackImageService.shared
     @Namespace private var animation
     
@@ -94,30 +94,40 @@ struct UniversalDashboardView: View {
                     showTrackMapFullScreen: $showTrackMapFullScreen
                 )
                 
-                ScrollView {
-                    VStack(spacing: 12) {
-                        if selectedSection == .all {
-                            // Show all sections normally
-                            ForEach(layoutManager.sections) { section in
-                                if section.isVisible && shouldShowSection(section.type) {
-                                    sectionBuilder.buildSection(for: section.type)
-                                        .matchedGeometryEffect(
-                                            id: section.id,
-                                            in: animation,
-                                            properties: .position
-                                        )
+                Group {
+                    if selectedSection == .all {
+                        ScrollView {
+                            VStack(spacing: 12) {
+                                // Show all sections normally
+                                ForEach(layoutManager.sections) { section in
+                                    if section.isVisible && shouldShowSection(section.type) {
+                                        sectionBuilder.buildSection(for: section.type)
+                                            .matchedGeometryEffect(
+                                                id: section.id,
+                                                in: animation,
+                                                properties: .position
+                                            )
+                                    }
                                 }
                             }
-                        } else {
-                            // Show single section expanded
-                            if let sectionType = dashboardSectionTypeFromSelection(selectedSection) {
-                                buildExpandedSection(for: sectionType, fullScreen: true)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 12)
+                        }
+                    } else if selectedSection == .liveTiming {
+                        // Live timing needs special handling to fill the screen
+                        buildExpandedSection(for: .liveTiming, fullScreen: true)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        // Other sections can be in a ScrollView
+                        ScrollView {
+                            VStack(spacing: 12) {
+                                if let sectionType = dashboardSectionTypeFromSelection(selectedSection) {
+                                    buildExpandedSection(for: sectionType, fullScreen: true)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                }
                             }
                         }
                     }
-                    .padding(.horizontal, selectedSection == .all ? 12 : 0)
-                    .padding(.vertical, selectedSection == .all ? 12 : 0)
                 }
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .scale(scale: 1.05)),
@@ -170,13 +180,11 @@ struct UniversalDashboardView: View {
         case .weather:
           VStack(spacing: 12) {
             WeatherView()
-            
-            // Wind map card
+              .modifier(PlatformGlassCardModifier())
             WindMapCard()
-              .frame(minHeight: 250)
+              .modifier(PlatformGlassCardModifier())
           }
           .padding()
-          .modifier(PlatformGlassCardModifier())
                 
         case .trackMap:
           VStack {
@@ -186,35 +194,12 @@ struct UniversalDashboardView: View {
               }
             }
             .padding()
-            .modifier(PlatformGlassCardModifier())
+//            .modifier(PlatformGlassCardModifier())
             
             
         case .liveTiming:
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Live Timing")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                
-                if appEnvironment.connectionStatus == .disconnected {
-                    DisconnectedStateView(
-                        title: "Live Timing Not Available",
-                        message: "Connect to live session to view timing data",
-                        minHeight: 300
-                    )
-                } else {
-                    // Full screen timing for all devices
-                    ScrollView([.horizontal, .vertical]) {
-                        EnhancedDriverListView()
-                            .frame(minWidth: 800)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .padding()
+            LiveTimingSection(shouldExpand: true)
+//            .modifier(PlatformGlassCardModifier())
             
         case .raceControl:
             VStack(alignment: .leading, spacing: 12) {
@@ -249,6 +234,7 @@ struct UniversalDashboardView: View {
                 }
             }
             .padding()
+            .modifier(PlatformGlassCardModifier())
         }
     }
     
@@ -281,7 +267,8 @@ struct UniversalDashboardView: View {
     return UniversalDashboardView(
         selectedSection: $selectedSection,
         showWeatherSheet: $showWeatherSheet,
-        showTrackMapFullScreen: $showTrackMapFullScreen
+        showTrackMapFullScreen: $showTrackMapFullScreen,
+        layoutManager: DashboardLayoutManager()
     )
     .environment(AppEnvironment())
 }

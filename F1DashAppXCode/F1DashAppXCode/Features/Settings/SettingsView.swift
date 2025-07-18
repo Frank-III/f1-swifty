@@ -457,6 +457,22 @@ struct DataSettingsView: View {
             }
             
             Section("Connection") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Server URL:")
+                        TextField("Server URL", text: Binding(
+                            get: { appEnvironment.settingsStore.serverURL },
+                            set: { newValue in appEnvironment.settingsStore.$serverURL.withLock { $0 = newValue } }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 250)
+                    }
+                    
+                    Text("Enter your F1 Dash server URL (e.g., https://tunnel.trycloudflare.com)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
                 Toggle("Auto-connect on launch", isOn: Binding(
                     get: { appEnvironment.settingsStore.autoConnect },
                     set: { newValue in appEnvironment.settingsStore.$autoConnect.withLock { $0 = newValue } }
@@ -562,6 +578,42 @@ struct iOSDataSettingsContent: View {
                         .disabled(customDelay.isEmpty)
                     }
                     .animation(.easeInOut(duration: 0.2), value: showCustomInput)
+                }
+            }
+            
+            // Server URL Setting
+            HStack {
+                Text("Server URL")
+                Spacer()
+                TextField("Server URL", text: Binding(
+                    get: { appEnvironment.settingsStore.serverURL },
+                    set: { newValue in appEnvironment.settingsStore.$serverURL.withLock { $0 = newValue } }
+                ))
+                .textFieldStyle(.roundedBorder)
+//                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .frame(maxWidth: 200)
+                .onSubmit {
+                    // Force immediate reconnection on submit
+                    if appEnvironment.connectionStatus == .connected {
+                        Task {
+                            await appEnvironment.disconnect()
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                            await appEnvironment.connect()
+                        }
+                    }
+                }
+            }
+            
+            HStack(spacing: 4) {
+                Text("Enter your F1 Dash server URL (e.g., https://tunnel.trycloudflare.com)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                if appEnvironment.connectionStatus == .connected {
+                    Text("• Auto-reconnects after 1.5s")
+                        .font(.caption)
+                        .foregroundStyle(.green)
                 }
             }
             

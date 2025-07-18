@@ -102,9 +102,16 @@ extension Driver: Codable {
 
 /// Top three drivers display information
 public struct TopThree: Sendable, Codable {
-    public let lines: [String: TopThreeDriver]
+    public let withheld: Bool?
+    public let lines: [TopThreeDriver]
     
-    public init(lines: [String: TopThreeDriver]) {
+    private enum CodingKeys: String, CodingKey {
+        case withheld
+        case lines
+    }
+    
+    public init(withheld: Bool? = nil, lines: [TopThreeDriver]) {
+        self.withheld = withheld
         self.lines = lines
     }
 }
@@ -125,6 +132,23 @@ public struct TopThreeDriver: Sendable, Codable {
     public let diffToLeader: String?
     public let overallFastest: Bool?
     public let personalFastest: Bool?
+    
+    private enum CodingKeys: String, CodingKey {
+        case position
+        case showPosition
+        case racingNumber
+        case tla
+        case broadcastName
+        case fullName
+        case team
+        case teamColour
+        case lapTime
+        case lapState
+        case diffToAhead
+        case diffToLeader
+        case overallFastest
+        case personalFastest
+    }
     
     public init(
         position: String? = nil,

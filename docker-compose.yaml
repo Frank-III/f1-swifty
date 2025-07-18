@@ -13,17 +13,17 @@ services:
       dockerfile: Dockerfile.linux
     container_name: f1-dash-server
     ports:
-      - "8080:8080"
+      - "3000:3000"
     environment:
       - LOG_LEVEL=info
       - HOST=0.0.0.0
-      - PORT=8080
+      - PORT=3000
     volumes:
       # Mount simulation data if needed
       - ./scripts:/app/scripts:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

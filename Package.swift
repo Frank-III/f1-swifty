@@ -45,6 +45,8 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.26.0"),
         // ADD: SWCompression for cross-platform zlib decompression
         .package(url: "https://github.com/tsolomko/SWCompression", from: "4.8.0"),
+        // SwiftSoup for HTML parsing
+        .package(url: "https://github.com/scinfu/SwiftSoup", from: "2.7.0"),
     ],
     targets: [
         // MARK: - Persistence Library
@@ -76,6 +78,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 // ADD: SWCompression product
                 .product(name: "SWCompression", package: "SWCompression"),
+                .product(name: "SwiftSoup", package: "SwiftSoup"),
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency"),

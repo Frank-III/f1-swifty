@@ -37,6 +37,9 @@ final class SettingsStore {
     @ObservationIgnored
     @Shared(.appStorage("autoConnect")) var autoConnect = true
     
+    @ObservationIgnored
+    @Shared(.appStorage("serverURL")) var serverURL = "http://127.0.0.1:3000"
+    
     // MARK: - Visual Settings
     
     @ObservationIgnored
@@ -123,6 +126,7 @@ final class SettingsStore {
         $oledMode.withLock { $0 = false }
         $useSafetyCarColors.withLock { $0 = true }
         $playRaceControlChime.withLock { $0 = true }
+        $serverURL.withLock { $0 = "http://127.0.0.1:3000" }
     }
 }
 

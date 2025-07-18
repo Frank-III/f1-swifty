@@ -1,7 +1,7 @@
 import Foundation
 
 /// Position data containing car coordinates on track
-public struct PositionData: Sendable, Codable {
+public struct PositionData: Sendable, Codable, Equatable {
     public let position: [PositionItem]?
     
     public init(position: [PositionItem]? = nil) {
@@ -10,7 +10,7 @@ public struct PositionData: Sendable, Codable {
 }
 
 /// Position data entry for a specific timestamp
-public struct PositionItem: Sendable, Codable {
+public struct PositionItem: Sendable, Codable, Equatable {
     public let timestamp: String
     public let entries: [String: PositionCar]
     
@@ -21,7 +21,7 @@ public struct PositionItem: Sendable, Codable {
 }
 
 /// Car position coordinates
-public struct PositionCar: Sendable, Codable {
+public struct PositionCar: Sendable, Codable, Equatable {
     public let status: String?
     public let x: Double
     public let y: Double
