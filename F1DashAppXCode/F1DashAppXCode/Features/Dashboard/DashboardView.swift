@@ -381,9 +381,9 @@ struct PopoverDashboardView: View {
                 
                 Button(action: {
                   // TODO: bring this back
-//                                      #if os(macOS)
-//                    NSApp.sendAction(#selector(AppDelegate.showDashboard), to: nil, from: nil)
-//                    #endif
+                                      #if os(macOS)
+                    NSApp.sendAction(#selector(AppDelegate.showDashboard), to: nil, from: nil)
+                    #endif
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "rectangle.expand.vertical")

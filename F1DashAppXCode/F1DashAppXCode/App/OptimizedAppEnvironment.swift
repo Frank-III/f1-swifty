@@ -2,7 +2,7 @@
 //  OptimizedAppEnvironment.swift
 //  F1-Dash
 //
-//  Performance-optimized version with efficient buffering and state management
+//  Simplified version with direct message processing (no buffering/timers)
 //
 
 import SwiftUI
@@ -16,7 +16,6 @@ public final class OptimizedAppEnvironment {
     // MARK: - Services
     
     let sseClient: SSEClient
-    let dataBuffer: OptimizedDataBuffer
     let settingsStore: SettingsStore
     let pictureInPictureManager: PictureInPictureManager
     let systemPictureInPictureManager: SystemPictureInPictureManager?
@@ -35,10 +34,8 @@ public final class OptimizedAppEnvironment {
     private(set) var scheduleLoadingStatus: LoadingStatus = .idle
     var isDashboardWindowOpen: Bool = false
     
-    // MARK: - Performance Monitoring
+    // MARK: - Task Management
     
-    private var updateTimer: Timer?
-    private let updateInterval: TimeInterval = 0.1 // 100ms update cycle
     private var messageProcessingTask: Task<Void, Never>?
     private var serverURLObservationTask: Task<Void, Never>?
     
@@ -47,7 +44,6 @@ public final class OptimizedAppEnvironment {
     public init() {
         self.settingsStore = SettingsStore()
         self.sseClient = SSEClient(baseURL: settingsStore.serverURL)
-        self.dataBuffer = OptimizedDataBuffer()
         self.pictureInPictureManager = PictureInPictureManager()
         self.liveSessionState = OptimizedLiveSessionState()
         self.soundManager = SoundManager()
@@ -71,13 +67,12 @@ public final class OptimizedAppEnvironment {
         self.liveActivityManager?.appEnvironment = self
         self.videoBasedPictureInPictureManager.appEnvironment = self
         
-        // Initialize notification manager and start update timer
+        // Initialize notification manager and observe server URL changes
         Task { @MainActor in
             // NotificationManager expects AppEnvironment, so we need to handle this differently
             // For now, we'll skip notification manager initialization
             // self.notificationManager = NotificationManager(appEnvironment: self)
             self.notificationManager = OptimizedNotificationManager(appEnvironment: self)
-            self.startUpdateTimer()
             self.startServerURLObservation()
             await checkAutoConnect()
         }
@@ -85,17 +80,6 @@ public final class OptimizedAppEnvironment {
     
     // deinit cannot be used with actors
     // Cleanup is handled in disconnect() method instead
-    
-    // MARK: - Update Timer
-    
-    private func startUpdateTimer() {
-        print("OptimizedAppEnvironment: Starting update timer with interval \(updateInterval)s")
-        updateTimer = Timer.scheduledTimer(withTimeInterval: updateInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.processBufferedData()
-            }
-        }
-    }
     
     // MARK: - Server URL Observation
     
@@ -126,40 +110,6 @@ public final class OptimizedAppEnvironment {
                 }
                 
                 previousURL = currentURL
-            }
-        }
-    }
-    
-    private func processBufferedData() async {
-        guard connectionStatus == .connected else {
-          print("OptimizedAppEnvironment: processBufferedData called but not connected (\(connectionStatus))")
-          return
-        }
-        let delay = settingsStore.dataDelay
-        
-        if delay == 0 {
-            // No delay - use latest data
-            if let latestData = await dataBuffer.latest() {
-                print("OptimizedAppEnvironment: Processing latest data with \(latestData.count) keys: \(latestData.keys.joined(separator: ", "))")
-                if latestData.keys.contains("raceControlMessages") {
-                    print("OptimizedAppEnvironment: Processing data contains raceControlMessages!")
-                }
-                liveSessionState.applyPartialUpdate(latestData)
-                checkForNotifications()
-            } else {
-                print("OptimizedAppEnvironment: No latest data available")
-            }
-        } else {
-            // Apply delay - get delayed data
-            if let delayedData = await dataBuffer.delayed(delay) {
-                print("OptimizedAppEnvironment: Processing delayed data (\(delay)s) with \(delayedData.count) keys")
-                liveSessionState.applyPartialUpdate(delayedData)
-                checkForNotifications()
-                
-                // Cleanup old buffer data
-                await dataBuffer.cleanup(delay)
-            } else {
-                print("OptimizedAppEnvironment: No delayed data available for \(delay)s delay")
             }
         }
     }
@@ -224,14 +174,9 @@ public final class OptimizedAppEnvironment {
         do {
             try await sseClient.connect()
             connectionStatus = .connected
-
-            // Restart periodic update timer if it was stopped during a previous disconnect
-            if updateTimer == nil {
-                print("OptimizedAppEnvironment: No update timer found, starting new one")
-                startUpdateTimer()
-            } else {
-                print("OptimizedAppEnvironment: Update timer already exists, not starting new one")
-            }
+            
+            // Force an immediate update on reconnection
+            liveSessionState.markReconnected()
 
             // Start data processing in background
             messageProcessingTask = Task.detached(priority: .high) { [weak self] in
@@ -244,13 +189,10 @@ public final class OptimizedAppEnvironment {
     }
     
     func disconnect() async {
-        print("OptimizedAppEnvironment: Disconnecting - invalidating update timer")
-        updateTimer?.invalidate()
-        updateTimer = nil
+        print("OptimizedAppEnvironment: Disconnecting")
         messageProcessingTask?.cancel()
         messageProcessingTask = nil
         await sseClient.disconnect()
-        await dataBuffer.clear()
         connectionStatus = .disconnected
         
         // Clean up PiP if active
@@ -258,8 +200,8 @@ public final class OptimizedAppEnvironment {
             videoBasedPictureInPictureManager.stopVideoPiP()
         }
         
-        // Clear animation state to ensure fresh start on reconnect
-        liveSessionState.clearState()
+        // Don't clear all state - just clear position timestamps to reset animations
+        liveSessionState.clearAnimationState()
     }
     
     // MARK: - Data Processing
@@ -279,12 +221,21 @@ public final class OptimizedAppEnvironment {
             }
             
         case .update(let update):
-            // Add to buffer for time-delayed processing
-            print("OptimizedAppEnvironment: Received update with \(update.count) keys: \(update.keys.joined(separator: ", "))")
-            if update.keys.contains("raceControlMessages") {
-                print("OptimizedAppEnvironment: Update contains raceControlMessages!")
+            // Apply delay if configured (like test implementation)
+            let delay = settingsStore.dataDelay
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
-            await dataBuffer.push(update)
+            
+            // Process update directly without buffering
+            await MainActor.run {
+                print("OptimizedAppEnvironment: Processing update with \(update.count) keys: \(update.keys.joined(separator: ", "))")
+                if update.keys.contains("positionData") {
+                    print("OptimizedAppEnvironment: Update contains positionData!")
+                }
+                liveSessionState.applyUpdate(update) // Direct update without batching
+                checkForNotifications()
+            }
             
         case .error(_):
             await MainActor.run {

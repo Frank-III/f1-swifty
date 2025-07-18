@@ -792,10 +792,8 @@ struct DynamicDriverLayer: View {
 
   var body: some View {
     // Force view to update when any data changes in liveSessionState
-    let positionData = appEnvironment.liveSessionState.positionData
     let currentDriverData = driverData
     let _ = print("🟡 DynamicDriverLayer: Rendering body with \(currentDriverData.count) drivers")
-    let _ = print("🟡 DynamicDriverLayer: Position data timestamp: \(positionData?.position?.last?.timestamp ?? "nil")")
 
     ZStack {
       ForEach(currentDriverData, id: \.driver.racingNumber) { driver, position in
@@ -813,55 +811,22 @@ struct DynamicDriverLayer: View {
         .animation(.linear(duration: 0.8), value: animatedPositions[driver.racingNumber])
       }
     }
-    .onChange(of: appEnvironment.liveSessionState.positionData?.position?.last?.timestamp ?? "") {
-      _, newTimestamp in
-      if !newTimestamp.isEmpty && newTimestamp != lastUpdateTimestamp {
-        print("🔵 DynamicDriverLayer: New position data with timestamp: \(newTimestamp)")
-        lastUpdateTimestamp = newTimestamp
-        updateAnimatedPositions()
-      }
-    }
-    // Also monitor position data changes directly
-    .onChange(of: appEnvironment.liveSessionState.positionData?.position?.count ?? 0) { _, newCount in
-      if newCount > 0 {
-        print("🔵 DynamicDriverLayer: Position data count changed: \(newCount)")
-        updateAnimatedPositions()
-      }
-    }
     .onAppear {
       // Set initial positions
       print("🔵 DynamicDriverLayer: onAppear")
       updateAnimatedPositions()
     }
-    // Direct observer for position data changes
-    .onReceive(NotificationCenter.default.publisher(for: Notification.Name("positionDataUpdated"))) { _ in
-      print("🟢 DynamicDriverLayer: Received positionDataUpdated notification")
+    // Primary update mechanism: monitor liveSessionState updateCounter
+    .onChange(of: appEnvironment.liveSessionState.updateCounter) { _, _ in
+      print("🔵 DynamicDriverLayer: UpdateCounter changed, updating positions")
       updateAnimatedPositions()
     }
-    // Clear cached positions when we are no longer connected so the first
-    // post-reconnect update is treated as new and triggers animations
+    // Clear cached positions on disconnect for fresh animations on reconnect
     .onChange(of: appEnvironment.connectionStatus) { _, newStatus in
       if newStatus != .connected {
         print("🟤 DynamicDriverLayer: Connection lost – clearing cached positions")
         animatedPositions.removeAll()
         lastUpdateTimestamp = ""
-      } else if newStatus == .connected {
-        print("🟢 DynamicDriverLayer: Connected – forcing position update")
-        // Force update after a small delay to ensure data is available
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-          lastUpdateTimestamp = "" // Reset to force update
-          updateAnimatedPositions()
-        }
-      }
-    }
-    // Monitor liveSessionState changes directly - this ensures we get updates after reconnection
-    .onChange(of: appEnvironment.liveSessionState.updateCounter) { _, _ in
-      print("🟡 DynamicDriverLayer: LiveSessionState updated, checking for new positions")
-      if let newTimestamp = appEnvironment.liveSessionState.positionData?.position?.last?.timestamp,
-         !newTimestamp.isEmpty && newTimestamp != lastUpdateTimestamp {
-        print("🔵 DynamicDriverLayer: New timestamp detected via updateCounter: \(newTimestamp)")
-        lastUpdateTimestamp = newTimestamp
-        updateAnimatedPositions()
       }
     }
   }

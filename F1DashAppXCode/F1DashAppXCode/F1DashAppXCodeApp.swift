@@ -11,17 +11,62 @@ import AppKit
 #endif
 
 // TEST MODE - Simple isolated track map test
-@main
-struct F1DashAppXCodeApp: App {
-    var body: some Scene {
-        WindowGroup {
-            TestIsolatedTrackMap()
-                .frame(width: 800, height: 600)
-        }
-    }
-}
+//@main
+//struct F1DashAppXCodeApp: App {
+//    var body: some Scene {
+//        WindowGroup {
+//            TestIsolatedTrackMap()
+//                .frame(width: 800, height: 600)
+//        }
+//    }
+//}
 
-/* ORIGINAL APP CODE - COMMENTED OUT FOR TESTING
+/// The main F1 Dashboard application structure.
+///
+/// This app provides a comprehensive F1 live timing experience across multiple platforms
+/// with specialized interfaces for different use cases and device types.
+///
+/// ## Key Features
+/// - **Multi-Platform Support**: Native experiences for macOS, iOS, and iPadOS
+/// - **Menu Bar Integration**: Quick access via macOS menu bar with live data
+/// - **Full Dashboard View**: Comprehensive timing data in a dedicated window
+/// - **Settings Management**: Configurable preferences and connection settings
+/// - **Live Data Streaming**: Real-time F1 timing data with optimized performance
+///
+/// ## Application Architecture
+/// ```
+/// F1DashAppXCodeApp (main)
+/// ├── macOS Scenes
+/// │   ├── Settings Window
+/// │   │   └── SettingsView()
+/// │   ├── Dashboard Window (hidden by default)
+/// │   │   └── MainTabView()
+/// │   └── MenuBarExtra
+/// │       └── SimplePopoverView()
+/// └── iOS/iPadOS Scenes
+///     └── Main Window
+///         └── MainTabView()
+/// ```
+///
+/// ## State Management
+/// The app uses `OptimizedAppEnvironment` for centralized state management:
+/// - **Connection Management**: Handles F1 API connections and disconnections
+/// - **Data Synchronization**: Ensures consistent data across all views
+/// - **Window State Tracking**: Manages which windows are open (prevents conflicts)
+/// - **Performance Optimization**: Efficient data updates and memory management
+///
+/// ## Platform-Specific Behaviors
+/// ### macOS
+/// - **Menu Bar App**: Primary interface via menu bar icon with system integration
+/// - **Dashboard Window**: On-demand full-screen timing data (Cmd+D to open)
+/// - **Settings Window**: System-standard preferences window
+/// - **App Delegate**: Handles application lifecycle and window management
+/// - **Dock Integration**: Can hide from dock for menu bar-only operation
+///
+/// ### iOS/iPadOS  
+/// - **Full Screen App**: MainTabView as primary interface
+/// - **Touch Optimized**: UI adapted for touch interaction
+/// - **Native Navigation**: Standard iOS navigation patterns
 @main
 struct F1DashAppXCodeApp: App {
     #if os(macOS)
@@ -76,6 +121,26 @@ struct F1DashAppXCodeApp: App {
 
 // MARK: - App Delegate (macOS only)
 
+/// macOS-specific application delegate that handles system integration and window management.
+///
+/// The AppDelegate provides essential macOS functionality including:
+/// - **Application Lifecycle**: Launch, termination, and cleanup handling
+/// - **Window Management**: Dashboard window creation and state tracking  
+/// - **Menu Bar Integration**: Coordinates with SwiftUI MenuBarExtra
+/// - **System Integration**: Dock visibility and activation policies
+///
+/// ## Window Management Strategy
+/// The delegate maintains references to dashboard windows to:
+/// - Prevent duplicate window creation
+/// - Enable programmatic window control via menu commands
+/// - Handle proper cleanup on app termination
+/// - Support switching between menu bar and regular app modes
+///
+/// ## Environment Integration
+/// The delegate receives the `OptimizedAppEnvironment` from SwiftUI to:
+/// - Access live data streams for window content
+/// - Coordinate connection lifecycle with app state
+/// - Prevent settings conflicts when dashboard is open
 #if os(macOS)
 class AppDelegate: NSObject, NSApplicationDelegate {
     static var shared: AppDelegate?
@@ -260,4 +325,4 @@ extension F1DashAppXCodeApp {
     }
 }
 #endif
-*/
+

@@ -33,6 +33,23 @@ final class OptimizedLiveSessionState {
         print("OptimizedLiveSessionState: State cleared, update counter incremented to \(updateCounter)")
     }
     
+    func clearAnimationState() {
+        print("OptimizedLiveSessionState: Clearing animation state only")
+        // Just clear position-related caches to force fresh animations
+        cache.positionData = nil
+        stateVersions["positionData"] = nil
+        // Force UI update
+        updateCounter += 1
+        print("OptimizedLiveSessionState: Animation state cleared, update counter incremented to \(updateCounter)")
+    }
+    
+    func markReconnected() {
+        print("OptimizedLiveSessionState: Marking as reconnected")
+        // Force UI update on reconnection
+        updateCounter += 1
+        print("OptimizedLiveSessionState: Reconnected, update counter incremented to \(updateCounter)")
+    }
+    
     // MARK: - Cache Storage
     
     private struct Cache {
@@ -54,11 +71,9 @@ final class OptimizedLiveSessionState {
     private var cache = Cache()
     private var stateVersions: [String: Int] = [:]
     
-    // MARK: - Batch Update Support
+    // MARK: - Batch Update Support (Deprecated - kept for compatibility)
     
     private var pendingUpdates: [[String: Any]] = []
-    private var updateTimer: Timer?
-    private let batchInterval: TimeInterval = 0.05 // 50ms batching
     
     // MARK: - Computed Properties with Caching
     
@@ -145,10 +160,6 @@ final class OptimizedLiveSessionState {
     func setFullState(_ state: [String: Any]) {
         print("OptimizedLiveSessionState: Setting full state with \(state.keys.count) keys: \(state.keys.joined(separator: ", "))")
         
-        // Cancel any pending batch updates
-        updateTimer?.invalidate()
-        pendingUpdates.removeAll()
-        
         // Replace entire state
         dataState = state
         
@@ -161,59 +172,30 @@ final class OptimizedLiveSessionState {
         print("OptimizedLiveSessionState: Full state set, update counter incremented to \(updateCounter)")
     }
     
-    func applyPartialUpdate(_ update: [String: Any]) {
-        print("OptimizedLiveSessionState: applyPartialUpdate called with keys: \(update.keys.joined(separator: ", "))")
+    func applyUpdate(_ update: [String: Any]) {
+        print("OptimizedLiveSessionState: applyUpdate called with keys: \(update.keys.joined(separator: ", "))")
         
-        // Add to pending updates for batching
-        pendingUpdates.append(update)
-        print("OptimizedLiveSessionState: Added to pendingUpdates, total pending: \(pendingUpdates.count)")
-        
-        // Schedule batch processing if not already scheduled
-        if updateTimer == nil {
-            print("OptimizedLiveSessionState: Scheduling batch processing timer")
-            updateTimer = Timer.scheduledTimer(withTimeInterval: batchInterval, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    self?.processBatchedUpdates()
-                }
-            }
-        } else {
-            print("OptimizedLiveSessionState: Timer already scheduled, not scheduling new one")
-        }
-    }
-    
-    private func processBatchedUpdates() {
-        guard !pendingUpdates.isEmpty else { return }
-        
-        print("OptimizedLiveSessionState: Processing \(pendingUpdates.count) batched updates")
-        
-        // Merge all pending updates
-        var mergedUpdate: [String: Any] = [:]
-        for update in pendingUpdates {
-            DataTransformation.mergeStates(&mergedUpdate, with: update)
-        }
-        
-        print("OptimizedLiveSessionState: Merged updates contain keys: \(mergedUpdate.keys.joined(separator: ", "))")
-        
-        // Apply merged update to state
-        DataTransformation.mergeStates(&dataState, with: mergedUpdate)
+        // Apply update directly to state (no batching)
+        DataTransformation.mergeStates(&dataState, with: update)
         
         // Update versions for changed keys
-        for key in mergedUpdate.keys {
+        for key in update.keys {
             stateVersions[key, default: 0] += 1
         }
         
         // Post notification for position data updates
-        if mergedUpdate.keys.contains("positionData") {
+        if update.keys.contains("positionData") {
             NotificationCenter.default.post(name: Notification.Name("positionDataUpdated"), object: nil)
         }
         
-        // Clear pending updates
-        pendingUpdates.removeAll()
-        updateTimer = nil
-        
         // Force UI update
         updateCounter += 1
-        print("OptimizedLiveSessionState: Update counter incremented to \(updateCounter)")
+        print("OptimizedLiveSessionState: Update applied, update counter incremented to \(updateCounter)")
+    }
+    
+    // Keep for backward compatibility
+    func applyPartialUpdate(_ update: [String: Any]) {
+        applyUpdate(update)
     }
     
     func checkForNewRaceControlMessages() -> Bool {
@@ -227,7 +209,6 @@ final class OptimizedLiveSessionState {
     }
     
     func clear() {
-        updateTimer?.invalidate()
         pendingUpdates.removeAll()
         dataState = [:]
         stateVersions = [:]

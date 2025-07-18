@@ -92,9 +92,9 @@ struct CompactHeader: View {
             // Dashboard button
             Button {
               //TODO: bring this back
-//                              #if os(macOS)
-//                NSApp.sendAction(#selector(AppDelegate.showDashboard), to: nil, from: nil)
-//                #endif
+                              #if os(macOS)
+                NSApp.sendAction(#selector(AppDelegate.showDashboard), to: nil, from: nil)
+                #endif
             } label: {
                 Image(systemName: "arrow.up.right.square")
                     .font(.caption)

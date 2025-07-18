@@ -274,3 +274,6 @@ The test implementation works reliably because it has a simpler, more direct upd
 2. Implement a debug mode that shows update counters and timestamps in the UI
 3. Add unit tests for coordinate transformations and bounds calculations
 4. Consider simplifying the reconnection flow to ensure animations always resume properly
+5. Review all async disconnect patterns in the real app for similar race conditions
+6. Consider implementing a connection state machine to prevent invalid state transitions
+7. Add integration tests that specifically test rapid connect/disconnect cycles
