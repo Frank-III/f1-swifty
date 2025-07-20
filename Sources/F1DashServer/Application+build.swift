@@ -43,7 +43,7 @@ func buildApplication(_ arguments: some AppArguments) async throws -> some Appli
   // MARK: - Core Services
   let sessionStateCache = SessionStateCache(enablePersistence: arguments.persistence)
   let dataProcessor = DataProcessingActor()
-  let signalRClient = SignalRClientActor()
+  let signalRClient = SignalRClientActor(simulationFile: arguments.simulate)
   let connectionManager = ConnectionManager()
 
   // Wire up data pipeline
@@ -51,16 +51,10 @@ func buildApplication(_ arguments: some AppArguments) async throws -> some Appli
     signalRClient: signalRClient,
     dataProcessor: dataProcessor,
     sessionStateCache: sessionStateCache,
-    connectionManager: connectionManager
+    // connectionManager: connectionManager
   )
 
-  // Start data connection
-  if let sim = arguments.simulate {
-    let fileURL = URL(fileURLWithPath: sim)
-    try await signalRClient.connectSimulation(logFile: fileURL)
-  } else {
-    try await signalRClient.connect()
-  }
+  // Note: Connection will be started by SignalRService when it runs
 
   // MARK: - HTTP & WebSocket Routing
   let router = Router(context: BasicRequestContext.self)
@@ -78,24 +72,28 @@ func buildApplication(_ arguments: some AppArguments) async throws -> some Appli
   }
   // REST API
   APIRouter.addRoutes(to: router, sessionStateCache: sessionStateCache)
+  // SSE endpoint for live F1 data streaming
+  SSEManager.addSSERoute(to: router, sessionStateCache: sessionStateCache)
+  //
   // WebSocket endpoint for live F1 data
-  let wsRouter = Router(context: BasicWebSocketRequestContext.self)
-  wsRouter.add(middleware: LogRequestsMiddleware(.debug))
+  // let wsRouter = Router(context: BasicWebSocketRequestContext.self)
+  // wsRouter.add(middleware: LogRequestsMiddleware(.debug))
 
-  wsRouter.addWebSocketRoute(sessionStateCache: sessionStateCache)
+  // wsRouter.addWebSocketRoute(sessionStateCache: sessionStateCache)
 
   // MARK: - Application & Services
   var app = Application(
     router: router,
-    server: .http1WebSocketUpgrade(
-      webSocketRouter: wsRouter, configuration: .init(extensions: [.perMessageDeflate()])),
     configuration: .init(
       address: .hostname(arguments.host, port: arguments.port),
-      serverName: "F1DashServer/1.0.0"
+      serverName: "F1DashServer/1.0.0",
     ),
     logger: logger
   )
-  app.addServices(connectionManager)
+  app.addServices(
+    signalRClient,
+    // connectionManager
+  )
   if arguments.persistence {
     app.addServices(DatabaseManager.shared)
   }
@@ -109,7 +107,7 @@ private func setupDataPipeline(
   signalRClient: SignalRClientActor,
   dataProcessor: DataProcessingActor,
   sessionStateCache: SessionStateCache,
-  connectionManager: ConnectionManager
+  // connectionManager: ConnectionManager
 ) async {
   await dataProcessor.setStateUpdateHandler { stateUpdate in
     await sessionStateCache.applyUpdate(stateUpdate)
@@ -121,6 +119,6 @@ private func setupDataPipeline(
     // Process for state
     await dataProcessor.processMessage(rawMessage)
     // Broadcast raw to WS clients
-    await connectionManager.broadcastRawMessage(rawMessage)
+    // await connectionManager.broadcastRawMessage(rawMessage)
   }
 }

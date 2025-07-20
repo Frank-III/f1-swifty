@@ -122,7 +122,7 @@ final class NotificationManager {
             guard let timing = appEnvironment.liveSessionState.timing(for: driver.racingNumber) else { continue }
             
             // Check for personal best lap
-            if timing.lastLapTime.personalFastest {
+            if timing.lastLapTime?.personalFastest != nil {
                 sendNotification(
                     title: "⭐ Personal Best",
                     body: "\(driver.broadcastName) sets a personal best lap!",
@@ -131,7 +131,7 @@ final class NotificationManager {
             }
             
             // Check for overall fastest lap
-            if timing.lastLapTime.overallFastest {
+            if timing.lastLapTime?.overallFastest != nil {
                 sendNotification(
                     title: "👑 Fastest Lap",
                     body: "\(driver.broadcastName) sets the fastest lap!",

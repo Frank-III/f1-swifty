@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct SessionInfoView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var sessionInfo: SessionInfo? {
         appEnvironment.liveSessionState.sessionInfo

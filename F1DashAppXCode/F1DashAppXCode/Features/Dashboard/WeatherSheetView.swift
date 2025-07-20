@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct WeatherSheetView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Environment(\.dismiss) private var dismiss
     
     private var weatherData: WeatherData? {
@@ -102,6 +103,7 @@ struct WeatherSheetView: View {
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .platformNavigationGlass()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

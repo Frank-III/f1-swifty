@@ -12,7 +12,8 @@ import AppKit
 #endif
 
 struct DashboardView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var selectedTab: DashboardTab? = .timing
     
     enum DashboardTab: String, CaseIterable, Identifiable {
@@ -89,6 +90,10 @@ struct DashboardView: View {
                             VStack(spacing: 12) {
                                 WeatherView()
                                 
+                                // Wind map card
+                                WindMapCard()
+                                    .frame(height: 150)
+                                
                                 // Latest race control message
                                 CompactRaceControlView()
                             }
@@ -100,8 +105,13 @@ struct DashboardView: View {
                             
                         case .trackMap:
                             VStack(spacing: 12) {
-                                TrackMapView()
+                                // TrackMapView()
+                                OptimizedTrackMapView(circuitKey: String(appEnvironment.liveSessionState.sessionInfo?.meeting?.circuit.key ?? 0))
                                     .frame(height: 400)
+                                
+                                // Team radios view
+                                TeamRadiosView()
+                                    .frame(maxHeight: 200)
                                 
                                 // Compact info below map
                                 HStack {
@@ -122,13 +132,14 @@ struct DashboardView: View {
                 }
             }
         }
-        .frame(width: 600, height: 600)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.platformSecondaryBackground)
     }
 }
 
 struct DashboardHeader: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack {
@@ -141,6 +152,11 @@ struct DashboardHeader: View {
                 Text("F1 Dash")
                     .font(.headline)
             }
+            
+            Spacer()
+            
+            // Compact weather info
+            CompactHeaderWeatherView()
             
             Spacer()
             
@@ -170,7 +186,8 @@ struct DashboardHeader: View {
 }
 
 struct ConnectionStatusIndicator: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         HStack(spacing: 6) {
@@ -192,7 +209,8 @@ struct ConnectionStatusIndicator: View {
 // MARK: - Popover Dashboard (Compact)
 
 struct PopoverDashboardView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     var body: some View {
         VStack(spacing: 0) {
@@ -362,7 +380,8 @@ struct PopoverDashboardView: View {
                     .frame(height: 20)
                 
                 Button(action: {
-                    #if os(macOS)
+                  // TODO: bring this back
+                                      #if os(macOS)
                     NSApp.sendAction(#selector(AppDelegate.showDashboard), to: nil, from: nil)
                     #endif
                 }) {

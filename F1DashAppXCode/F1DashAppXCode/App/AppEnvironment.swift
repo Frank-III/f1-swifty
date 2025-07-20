@@ -16,29 +16,34 @@ import F1DashModels
 public final class AppEnvironment {
     // MARK: - Services
     
-    let webSocketClient: WebSocketClient
+    let sseClient: SSEClient
     let dataBufferActor: DataBufferActor
     let settingsStore: SettingsStore
     let pictureInPictureManager: PictureInPictureManager
     let systemPictureInPictureManager: SystemPictureInPictureManager?
     let liveActivityManager: LiveActivityManager?
     private var notificationManager: NotificationManager?
+    let soundManager: SoundManager
+    let racePreferences: RacePreferences
     
     // MARK: - State
     
-    private(set) var liveSessionState: LiveSessionState
+    private(set) var liveSessionState: LiveSessionStateNew
     private(set) var connectionStatus: ConnectionStatus = .disconnected
     private(set) var schedule: [RaceRound] = []
     private(set) var scheduleLoadingStatus: LoadingStatus = .idle
+    var isDashboardWindowOpen: Bool = false
     
     // MARK: - Initialization
     
     public init() {
-        self.webSocketClient = WebSocketClient()
+        self.sseClient = SSEClient()
         self.dataBufferActor = DataBufferActor()
         self.settingsStore = SettingsStore()
         self.pictureInPictureManager = PictureInPictureManager()
-        self.liveSessionState = LiveSessionState()
+        self.liveSessionState = LiveSessionStateNew()
+        self.soundManager = SoundManager()
+        self.racePreferences = RacePreferences()
         
         // Initialize managers only on iOS
         #if !os(macOS)
@@ -50,9 +55,10 @@ public final class AppEnvironment {
         #endif
         
         // Set reference to self in managers
-        self.pictureInPictureManager.appEnvironment = self
-        self.systemPictureInPictureManager?.appEnvironment = self
-        self.liveActivityManager?.appEnvironment = self
+        // self.pictureInPictureManager.appEnvironment = self
+        // self.systemPictureInPictureManager?.appEnvironment = self
+        // self.liveActivityManager?.appEnvironment = self
+        // Note: These managers now expect OptimizedAppEnvironment, not AppEnvironment
         
         // Initialize notification manager after self is available
         Task { @MainActor in
@@ -91,8 +97,12 @@ public final class AppEnvironment {
             let decodedSchedule = try decoder.decode([RaceRound].self, from: data)
             
             // Update schedule with decoded data
-            schedule = decodedSchedule
-            scheduleLoadingStatus = .loaded
+          await MainActor.run {
+            withAnimation {
+              schedule = decodedSchedule
+              scheduleLoadingStatus = .loaded
+            }
+          }
         } catch {
             print("Failed to fetch schedule: \(error)")
             scheduleLoadingStatus = .error(error.localizedDescription)
@@ -119,7 +129,7 @@ public final class AppEnvironment {
         connectionStatus = .connecting
         
         do {
-            try await webSocketClient.connect()
+            try await sseClient.connect()
             connectionStatus = .connected
             
             // Start data processing in a detached task to avoid blocking
@@ -133,42 +143,56 @@ public final class AppEnvironment {
     }
     
     func disconnect() async {
-        await webSocketClient.disconnect()
+        await sseClient.disconnect()
         connectionStatus = .disconnected
     }
     
     // MARK: - Data Processing
     
     private func startDataProcessing() async {
-        for await message in await webSocketClient.messages {
-            await processMessage(message)
+        for await message in await sseClient.messages {
+            switch message {
+            case .initial(let state):
+                await processInitialState(state)
+            case .update(let update):
+                await processUpdate(update)
+            case .error(_):
+                connectionStatus = .disconnected
+            }
         }
     }
     
-    private func processMessage(_ message: WebSocketMessage) async {
-        // Add message to buffer with configured delay
+    private func processInitialState(_ state: [String: Any]) async {
+        // For initial state, update directly without buffering
+        updateState(isInitial: true, data: state)
+    }
+    
+    private func processUpdate(_ update: [String: Any]) async {
+        // Add update to buffer with configured delay
         let delay = settingsStore.dataDelay
-        await dataBufferActor.addMessage(message, delay: delay)
+        await dataBufferActor.addMessage(update, delay: delay)
         
         // Process buffered messages
         let bufferedMessages = await dataBufferActor.getReadyMessages()
         for bufferedMessage in bufferedMessages {
-            updateState(with: bufferedMessage)
+            updateState(isInitial: false, data: bufferedMessage)
         }
     }
     
-    private func updateState(with message: WebSocketMessage) {
-        switch message {
-        case .fullState(let state):
-            liveSessionState.updateFullState(state)
-        case .stateUpdate(let update):
-            liveSessionState.applyUpdate(update)
-        case .connectionStatus:
-            break
+    private func updateState(isInitial: Bool, data: [String: Any]) {
+        if isInitial {
+            liveSessionState.setFullState(data)
+        } else {
+            liveSessionState.applyPartialUpdate(data)
         }
         
         // Check for notifications after state update
         notificationManager?.checkForNotifications()
+        
+        // Check for race control chime
+        if settingsStore.playRaceControlChime && liveSessionState.checkForNewRaceControlMessages() {
+            soundManager.playSound(.raceControlChime)
+        }
     }
 }
 

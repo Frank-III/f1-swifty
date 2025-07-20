@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		099768322E1F045800A7AD90 /* EventSource in Frameworks */ = {isa = PBXBuildFile; productRef = 099768312E1F045800A7AD90 /* EventSource */; };
+		09C9211A2E2C487C00ED4E67 /* Glur in Frameworks */ = {isa = PBXBuildFile; productRef = 09C921192E2C487C00ED4E67 /* Glur */; };
+		09C9211D2E2C8DCF00ED4E67 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 09C9211C2E2C8DCF00ED4E67 /* RevenueCat */; };
 		09CF07592E15A7120027A478 /* Sharing in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF07582E15A7120027A478 /* Sharing */; };
 		09CF075C2E15A79B0027A478 /* F1DashModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF075B2E15A79B0027A478 /* F1DashModels */; };
 /* End PBXBuildFile section */
@@ -34,14 +37,45 @@
 		09CF06F12E15A69A0027A478 /* F1DashAppXCodeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = F1DashAppXCodeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		09644A902E277AE60073D5D1 /* Exceptions for "F1DashAppXCode" folder in "F1DashAppXCode" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 09CF06D82E15A6980027A478 /* F1DashAppXCode */;
+		};
+		09C91EC12E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				IsolatedTrackMapTest.swift,
+			);
+			target = 09CF06E62E15A69A0027A478 /* F1DashAppXCodeTests */;
+		};
+		09C91EC22E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				IsolatedTrackMapTest.swift,
+			);
+			target = 09CF06F02E15A69A0027A478 /* F1DashAppXCodeUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		09CF06DB2E15A6980027A478 /* F1DashAppXCode */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09644A902E277AE60073D5D1 /* Exceptions for "F1DashAppXCode" folder in "F1DashAppXCode" target */,
+			);
 			path = F1DashAppXCode;
 			sourceTree = "<group>";
 		};
 		09CF06EA2E15A69A0027A478 /* F1DashAppXCodeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09C91EC12E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeTests" target */,
+				09C91EC22E29AE6500ED4E67 /* Exceptions for "F1DashAppXCodeTests" folder in "F1DashAppXCodeUITests" target */,
+			);
 			path = F1DashAppXCodeTests;
 			sourceTree = "<group>";
 		};
@@ -58,6 +92,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				09CF07592E15A7120027A478 /* Sharing in Frameworks */,
+				099768322E1F045800A7AD90 /* EventSource in Frameworks */,
+				09C9211D2E2C8DCF00ED4E67 /* RevenueCat in Frameworks */,
+				09C9211A2E2C487C00ED4E67 /* Glur in Frameworks */,
 				09CF075C2E15A79B0027A478 /* F1DashModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -121,6 +158,9 @@
 			packageProductDependencies = (
 				09CF07582E15A7120027A478 /* Sharing */,
 				09CF075B2E15A79B0027A478 /* F1DashModels */,
+				099768312E1F045800A7AD90 /* EventSource */,
+				09C921192E2C487C00ED4E67 /* Glur */,
+				09C9211C2E2C8DCF00ED4E67 /* RevenueCat */,
 			);
 			productName = F1DashAppXCode;
 			productReference = 09CF06D92E15A6980027A478 /* F1DashAppXCode.app */;
@@ -207,6 +247,9 @@
 			packageReferences = (
 				09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */,
 				09CF075A2E15A79B0027A478 /* XCLocalSwiftPackageReference "../F1DashModels" */,
+				099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */,
+				09C921182E2C487C00ED4E67 /* XCRemoteSwiftPackageReference "Glur" */,
+				09C9211B2E2C8DCF00ED4E67 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 09CF06DA2E15A6980027A478 /* Products */;
@@ -408,6 +451,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = F1DashAppXCode/F1DashAppXCode.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -417,6 +461,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = F1DashAppXCode/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "F1 Swifty";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -451,6 +498,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = F1DashAppXCode/F1DashAppXCode.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -460,6 +508,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = F1DashAppXCode/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "F1 Swifty";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -631,6 +682,30 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/loopwork/EventSource.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
+		09C921182E2C487C00ED4E67 /* XCRemoteSwiftPackageReference "Glur" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/joogps/Glur.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.4;
+			};
+		};
+		09C9211B2E2C8DCF00ED4E67 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.33.0;
+			};
+		};
 		09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-sharing";
@@ -642,6 +717,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		099768312E1F045800A7AD90 /* EventSource */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 099768302E1F045800A7AD90 /* XCRemoteSwiftPackageReference "EventSource" */;
+			productName = EventSource;
+		};
+		09C921192E2C487C00ED4E67 /* Glur */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 09C921182E2C487C00ED4E67 /* XCRemoteSwiftPackageReference "Glur" */;
+			productName = Glur;
+		};
+		09C9211C2E2C8DCF00ED4E67 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 09C9211B2E2C8DCF00ED4E67 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
 		09CF07582E15A7120027A478 /* Sharing */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 09CF07572E15A7120027A478 /* XCRemoteSwiftPackageReference "swift-sharing" */;

@@ -29,7 +29,8 @@ public final class SystemPictureInPictureManager: NSObject {
     private var pictureInPictureController: AVPictureInPictureController?
     private var displayLink: CADisplayLink?
     
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // Track if PiP is active
     private(set) var isSystemPiPActive = false
@@ -182,7 +183,8 @@ extension SystemPictureInPictureManager: @preconcurrency AVPictureInPictureContr
 #if !os(macOS)
 @MainActor
 class TrackMapVideoOutput: NSObject {
-    private let appEnvironment: AppEnvironment
+    // private let appEnvironment: AppEnvironment
+    private let appEnvironment: OptimizedAppEnvironment
     private let videoSize: CGSize
     private var displayLink: CADisplayLink?
     private var sampleBufferDisplayLayer: AVSampleBufferDisplayLayer?
@@ -193,7 +195,8 @@ class TrackMapVideoOutput: NSObject {
     private var frameCount: Int64 = 0
     private let frameRate: Double = 30.0
     
-    init(appEnvironment: AppEnvironment, videoSize: CGSize) {
+    // init(appEnvironment: AppEnvironment, videoSize: CGSize) {
+    init(appEnvironment: OptimizedAppEnvironment, videoSize: CGSize) {
         self.appEnvironment = appEnvironment
         self.videoSize = videoSize
         super.init()
@@ -202,7 +205,8 @@ class TrackMapVideoOutput: NSObject {
     
     private func setupRenderer() {
         // Create the track map view for rendering
-        let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
+        // let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
+        let trackMapView = OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
             .frame(width: videoSize.width, height: videoSize.height)
             .background(Color.black)
         

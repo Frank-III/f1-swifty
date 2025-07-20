@@ -9,7 +9,7 @@ import SwiftUI
 import F1DashModels
 
 struct FavoriteDriversView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var drivers: [Driver] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -109,6 +109,20 @@ struct DriverRow: View {
     let driver: Driver
     let settings: SettingsStore
     
+    private var driverNameFontSize: CGFloat {
+        #if os(macOS)
+        return 16
+        #elseif os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 18
+        } else {
+            return 16
+        }
+        #else
+        return 16
+        #endif
+    }
+    
     var body: some View {
         HStack {
             // Driver headshot
@@ -150,7 +164,7 @@ struct DriverRow: View {
                         .frame(width: 40, alignment: .leading)
                     
                     Text(driver.fullName)
-                        .font(.headline)
+                        .font(.system(size: driverNameFontSize, weight: .semibold, design: .default))
                 }
                 
                 HStack(spacing: 4) {

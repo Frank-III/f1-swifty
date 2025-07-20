@@ -102,45 +102,69 @@ extension Driver: Codable {
 
 /// Top three drivers display information
 public struct TopThree: Sendable, Codable {
-    public let lines: [String: TopThreeDriver]
+    public let withheld: Bool?
+    public let lines: [TopThreeDriver]
     
-    public init(lines: [String: TopThreeDriver]) {
+    private enum CodingKeys: String, CodingKey {
+        case withheld
+        case lines
+    }
+    
+    public init(withheld: Bool? = nil, lines: [TopThreeDriver]) {
+        self.withheld = withheld
         self.lines = lines
     }
 }
 
 /// Top three driver entry
 public struct TopThreeDriver: Sendable, Codable {
-    public let position: String
-    public let showPosition: Bool
-    public let racingNumber: String
-    public let tla: String
-    public let broadcastName: String
-    public let fullName: String
-    public let team: String
-    public let teamColour: String
-    public let lapTime: String
-    public let lapState: Int
-    public let diffToAhead: String
-    public let diffToLeader: String
-    public let overallFastest: Bool
-    public let personalFastest: Bool
+    public let position: String?
+    public let showPosition: Bool?
+    public let racingNumber: String?
+    public let tla: String?
+    public let broadcastName: String?
+    public let fullName: String?
+    public let team: String?
+    public let teamColour: String?
+    public let lapTime: String?
+    public let lapState: Int?
+    public let diffToAhead: String?
+    public let diffToLeader: String?
+    public let overallFastest: Bool?
+    public let personalFastest: Bool?
+    
+    private enum CodingKeys: String, CodingKey {
+        case position
+        case showPosition
+        case racingNumber
+        case tla
+        case broadcastName
+        case fullName
+        case team
+        case teamColour
+        case lapTime
+        case lapState
+        case diffToAhead
+        case diffToLeader
+        case overallFastest
+        case personalFastest
+    }
     
     public init(
-        position: String,
-        showPosition: Bool,
-        racingNumber: String,
-        tla: String,
-        broadcastName: String,
-        fullName: String,
-        team: String,
-        teamColour: String,
-        lapTime: String,
-        lapState: Int,
-        diffToAhead: String,
-        diffToLeader: String,
-        overallFastest: Bool,
-        personalFastest: Bool
+        position: String? = nil,
+        showPosition: Bool? = nil,
+        racingNumber: String? = nil,
+        tla: String? = nil,
+        broadcastName: String? = nil,
+        fullName: String? = nil,
+        team: String? = nil,
+        teamColour: String? = nil,
+        lapTime: String? = nil,
+        lapState: Int? = nil,
+        diffToAhead: String? = nil,
+        diffToLeader: String? = nil,
+        overallFastest: Bool? = nil,
+        personalFastest: Bool? = nil
     ) {
         self.position = position
         self.showPosition = showPosition

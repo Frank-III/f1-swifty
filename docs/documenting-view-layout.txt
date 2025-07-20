@@ -1,0 +1,556 @@
+//
+//  Copyright © 2025 Apple Inc. All rights reserved.
+//
+
+import SwiftUI
+import TokenMeterFramework
+import AppKit
+
+/// The dropdown content view displayed when clicking the menu bar item.
+///
+/// This view serves as the main content panel that appears when users click on the
+/// menu bar icon. It provides a comprehensive interface showing current token usage,
+/// expandable settings, and action buttons.
+///
+/// ## Key Features
+/// - **Usage Display**: Shows current token consumption and cost information
+/// - **Expandable Settings**: Inline settings panel that can be toggled open/closed
+/// - **Loading States**: Handles and displays loading, error, and no-data states
+/// - **Action Buttons**: Provides access to settings and app termination
+///
+/// ## Layout Structure
+/// ```
+/// ┌─────────────────────────────────┐
+/// │ 🌊 TokenMeter              🔄   │ ← Title with refresh button
+/// │    Updated 2 min ago            │ ← Status: timestamp, "Updating…", or "Update failed"
+/// ├─────────────────────────────────┤
+/// │ Usage Information               │
+/// │ 🔢 18.1M / 1.0B tokens         │
+/// │ 💲 $10.92 / $604.46            │
+/// ├─────────────────────────────────┤
+/// │ Settings                    ❯   │ ← Always visible with animated chevron
+/// │ ├ Display: [Dropdown]           │ ← Expands/collapses below
+/// │ ├ ☑ Color indicators            │
+/// │ └ Refresh: [2] min [+] [-]      │ ← Stepper control
+/// ├─────────────────────────────────┤
+/// │ Quit                            │
+/// └─────────────────────────────────┘
+/// ```
+///
+/// ## State Management
+/// The view automatically handles different states:
+/// - **Loading**: Shows "Updating…" text in header while preserving content
+/// - **Success**: Displays usage information with timestamp and refresh button
+/// - **Error**: Shows "Update failed" in header (same refresh button available for retry)
+/// - **No Data**: Displays appropriate message when no usage data is available
+struct MenuBarContentView: View {
+
+    @Environment(TokenUsageManager.self) private var manager
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingSettings = false
+    @State private var showSpotlight = false
+    @State private var quotaResetDate = MenuBarContentView.calculateNextQuotaReset()
+    @State private var dailyResetTimer: Timer?
+    @State private var sparkleManager = SparkleManager()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerSection
+
+            if let usage = manager.currentUsage {
+                usageDetailsSection(usage)
+            } else {
+                noDataButton
+            }
+
+            Divider()
+                .padding(.horizontal, 12)
+
+            quotaResetSection
+
+            Divider()
+                .padding(.horizontal, 12)
+
+            actionButtons
+        }
+        .padding(.horizontal, 0)
+        .padding(.vertical, 0)
+        .frame(minWidth: 280, maxWidth: 320)
+        .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "usage_details_accessibility_label", comment: "Usage details main accessibility label"))
+        .onAppear {
+            startSpotlightAnimation()
+            startDailyResetTimer()
+        }
+        .task {
+            // Alternative trigger method
+            guard !Task.isCancelled else { return }
+            try? await Task.sleep(nanoseconds: 700_000_000) // 0.7 seconds
+            startSpotlightAnimation()
+        }
+        .onDisappear {
+            // Reset animation state when view disappears
+            showSpotlight = false
+            stopDailyResetTimer()
+        }
+    }
+
+    // MARK: - Timer Methods
+
+    private func startSpotlightAnimation() {
+        showSpotlight = true
+    }
+
+    private func startDailyResetTimer() {
+        // Check every minute to update the reset date and countdown
+        dailyResetTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            let newResetDate = Self.calculateNextQuotaReset()
+            if newResetDate != quotaResetDate {
+                quotaResetDate = newResetDate
+            }
+        }
+    }
+
+    private func stopDailyResetTimer() {
+        dailyResetTimer?.invalidate()
+        dailyResetTimer = nil
+    }
+
+    static func calculateNextQuotaReset() -> Date {
+        let now = Date()
+        let calendar = Calendar(identifier: .gregorian)
+        var utcCalendar = calendar
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+
+        // Get today's 12AM UTC
+        let todayMidnight = utcCalendar.startOfDay(for: now)
+
+        // If we're already past today's midnight UTC, return tomorrow's midnight
+        // Otherwise, return today's midnight
+        if now >= todayMidnight {
+            let tomorrow = utcCalendar.date(byAdding: .day, value: 1, to: todayMidnight)!
+            return tomorrow
+        } else {
+            return todayMidnight
+        }
+    }
+}
+
+// MARK: - View Components
+
+private extension MenuBarContentView {
+
+
+    var headerSection: some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 4) {
+                // Enhanced wave icon with app's signature colors
+                Image(systemName: "water.waves")
+                    .foregroundStyle(
+                        Color.green,
+                    )
+                    .font(.headline)
+                    .padding(.top, 2)
+
+                // Enhanced title with Apple Intelligence-style spotlight animation
+                ShimmerText(
+                    String(localized: "app_title", comment: "Application title"),
+                    font: .headline.weight(.regular),
+                    foregroundStyle: LinearGradient(
+                        colors: [Color.green, Color.orange, Color.red],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    isAnimating: $showSpotlight
+                )
+
+                Spacer()
+            }
+
+            HStack(alignment: .center, spacing: 4) {
+                // Manual refresh button - positioned before the status text
+                Button(action: {
+                    Task {
+                        await manager.refreshUsage()
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(manager.isLoading)
+
+                if manager.isLoading {
+                    Text(String(localized: "updating_status", comment: "Loading status message"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else if let usage = manager.currentUsage {
+                    let updatedPrefix = String(localized: "updated_prefix", comment: "Updated prefix")
+                    let updatedSuffix = String(localized: "updated_suffix", comment: "Updated suffix")
+                    Text("\(updatedPrefix) \(usage.timestamp, style: .relative)\(updatedSuffix)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else if manager.lastError != nil {
+                    Text(String(localized: "update_failed_status", comment: "Update failed status message"))
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                } else {
+                    Text(String(localized: "no_data_status", comment: "No data status message"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+            }
+        }
+        .padding(.top, 13)
+        .padding(.bottom, 2)
+        .padding(.horizontal, 12)
+    }
+
+    var quotaResetSection: some View {
+        HStack {
+            Image(systemName: "clock")
+                .foregroundColor(.secondary)
+                .font(.body)
+
+            Text("Quota resets \(quotaResetDate, style: .relative)")
+                .font(.body)
+                .foregroundColor(.primary)
+
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+    }
+
+    func usageDetailsSection(_ usage: TokenUsage) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Token usage
+            HStack {
+                Image(systemName: "number.circle.fill")
+                    .foregroundColor(.blue)
+                    .font(.body)
+                Text(tokensAttributedString(usage))
+                    .font(.body)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(String(localized: "token_usage_accessibility_label", comment: "Token usage accessibility label"))
+            .accessibilityValue(unsafe String(
+                format: String(localized: "tokens_used_format", comment: "Accessibility format for tokens usage"),
+                usage.tokensUsed.formatted(.number.notation(.compactName)),
+                usage.tokensAvailable.formatted(.number.notation(.compactName))
+            ))
+
+            // Cost usage
+            HStack {
+                Image(systemName: "dollarsign.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.body)
+                Text(costAttributedString(usage))
+                    .font(.body)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(String(localized: "cost_usage_accessibility_label", comment: "Cost usage accessibility label"))
+            .accessibilityValue(unsafe String(
+                format: String(localized: "cost_spent_format", comment: "Accessibility format for cost spent"),
+                usage.totalCostUsed.formatted(.currency(code: "USD")),
+                usage.totalCostAvailable.formatted(.currency(code: "USD"))
+            ))
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "usage_information_accessibility_label", comment: "Usage information accessibility label"))
+    }
+
+    var noDataButton: some View {
+        Button(action: {}) {
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .foregroundColor(.secondary)
+                    .font(.title2)
+
+                Text(String(localized: "no_usage_data_message", comment: "No usage data available message"))
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(true)
+    }
+
+    var actionButtons: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Settings disclosure group
+            DisclosureGroup(String(localized: "settings_header", comment: "Settings section header"), isExpanded: $showingSettings) {
+                settingsSection
+                Divider()
+                    .padding(.horizontal, 12)
+            }
+            .disclosureGroupStyle(MenuDisclosureGroupStyle())
+            .clipped() // Prevent settings content from bleeding upward during animation
+
+            MenuItemButton("Check for Updates...") {
+                sparkleManager.checkForUpdates()
+            }
+
+            MenuItemButton(String(localized: "quit_button", comment: "Quit application button")) {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    func thresholdColor(for threshold: UsageThreshold) -> Color {
+        switch threshold {
+        case .normal:
+            return .green
+        case .warning:
+            return .orange
+        case .critical:
+            return .red
+        }
+    }
+
+    func tokensAttributedString(_ usage: TokenUsage) -> AttributedString {
+        let tokensUsedFormatted = usage.tokensUsed.formatted(.number.notation(.compactName))
+        let tokensAvailableFormatted = usage.tokensAvailable.formatted(.number.notation(.compactName))
+        let separator = String(localized: "tokens_format_separator", comment: "Format separator between used and available")
+        let tokensWord = String(localized: "tokens_word", comment: "Tokens unit label")
+
+        var attributedString = AttributedString("\(tokensUsedFormatted) \(separator) \(tokensAvailableFormatted) \(tokensWord)")
+        attributedString.foregroundColor = .primary
+        attributedString.font = .body.weight(.medium)
+
+        return attributedString
+    }
+
+    func costAttributedString(_ usage: TokenUsage) -> AttributedString {
+        let costUsed = usage.totalCostUsed.formatted(.currency(code: "USD").precision(.fractionLength(2)))
+        let costAvailable = usage.totalCostAvailable.formatted(.currency(code: "USD").precision(.fractionLength(2)))
+
+        var attributedString = AttributedString("\(costUsed) / \(costAvailable)")
+        attributedString.foregroundColor = .primary
+        attributedString.font = .body.weight(.medium)
+
+        return attributedString
+    }
+
+    var settingsSection: some View {
+        @Bindable var bindableManager = manager
+
+        return VStack(alignment: .leading, spacing: 8) {
+            // Display Mode
+            HStack {
+                Text(String(localized: "display_setting_label", comment: "Display mode setting label"))
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 16) // Align with Settings title
+
+                Spacer()
+
+                Picker("", selection: $bindableManager.displayMode) {
+                    ForEach(DisplayMode.allCases, id: \.self) { mode in
+                        Text(mode.description).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
+
+            // Color Toggle
+            HStack {
+                Text(String(localized: "color_setting_label", comment: "Color indicators setting label"))
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 16) // Align with Settings title
+
+                Spacer()
+
+                Toggle(String(localized: "show_color_indicators", comment: "Show color indicators toggle label"), isOn: $bindableManager.showColorIndicators)
+                    .toggleStyle(.checkbox)
+            }
+
+            // Refresh Interval with Smart Stepping
+            HStack {
+                Text(String(localized: "refresh_setting_label", comment: "Refresh interval setting label"))
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 16) // Align with Settings title
+
+                Spacer()
+
+                Stepper(value: Binding(
+                    get: { Int(manager.refreshInterval / 60) },
+                    set: { newValue in
+                        manager.refreshInterval = TimeInterval(max(1, newValue) * 60)
+                    }
+                ), in: 1...30) {
+                    HStack {
+                        Text("\(Int(manager.refreshInterval / 60))")
+                            .font(.body.monospacedDigit())
+                            .frame(minWidth: 20, alignment: .trailing)
+                        Text(String(localized: "minutes_abbreviation", comment: "Minutes abbreviation"))
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    }
+                }
+            }
+
+            // Launch at Login
+            HStack {
+                Text(String(localized: "startup_setting_label", comment: "Startup setting label"))
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 16) // Align with Settings title
+
+                Spacer()
+
+                Toggle(String(localized: "launch_at_login_accessibility_label", comment: "Launch at login toggle label"), isOn: $bindableManager.launchAtLogin)
+                    .toggleStyle(.checkbox)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+}
+
+
+/// Custom disclosure group style that matches our menu item styling
+private struct MenuDisclosureGroupStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            MenuItemButtonContent(
+                label: configuration.label,
+                isExpanded: configuration.isExpanded,
+                action: {
+                    configuration.isExpanded.toggle()
+                }
+            )
+
+            if configuration.isExpanded {
+                configuration.content
+            }
+        }
+    }
+}
+
+/// Helper view for the disclosure group button that handles hover state
+private struct MenuItemButtonContent: View {
+    let label: any View
+    let isExpanded: Bool
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                AnyView(label)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(.easeInOut(duration: 0.2), value: isExpanded)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isHovered ? Color.accentColor.opacity(0.8) : Color.clear)
+                    .padding(.vertical, 2)
+                    .padding(.horizontal, 4)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+
+// MARK: - Previews
+
+#Preview("Normal Usage") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.normalUsage)
+        )
+}
+
+#Preview("High Usage") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.highUsage)
+        )
+}
+
+#Preview("Critical Usage") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.criticalUsage)
+        )
+}
+
+#Preview("Loading State") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService(requestDelay: 10))
+        )
+}
+
+#Preview("Error State") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.alwaysFails)
+        )
+}
+
+#Preview("Accessibility - Large Text") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.normalUsage)
+        )
+        .environment(\.dynamicTypeSize, .accessibility2)
+}
+
+#Preview("Accessibility - Extra Large Text") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.highUsage)
+        )
+        .environment(\.dynamicTypeSize, .accessibility5)
+}
+
+#Preview("Accessibility - Reduced Motion") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.criticalUsage)
+        )
+}
+
+#Preview("Dark Mode") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.normalUsage)
+        )
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Compact Size") {
+    MenuBarContentView()
+        .environment(
+            TokenUsageManager(tokenService: MockTokenUsageService.highUsage)
+        )
+        .frame(width: 280, height: 200)
+}

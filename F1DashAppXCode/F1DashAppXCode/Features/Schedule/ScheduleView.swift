@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct ScheduleView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @State private var selectedRace: RaceRound?
     @State private var showPastRaces = false
     
@@ -54,8 +55,8 @@ struct ScheduleView: View {
                 .padding(.bottom)
             }
             .modifier(PlatformEnhancedScrollingModifier())
-            .navigationTitle("Race Schedule")
             #if !os(macOS)
+            .navigationTitle("Race Schedule")
             .navigationBarTitleDisplayMode(.large)
             #endif
             .toolbar {

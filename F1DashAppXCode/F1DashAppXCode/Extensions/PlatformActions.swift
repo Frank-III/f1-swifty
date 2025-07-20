@@ -14,8 +14,13 @@ import AppKit
 struct PlatformActions {
     /// Opens the settings window (macOS only)
     @MainActor
-    static func openSettings() {
+    static func openSettings(_ appEnvironment: AppEnvironment? = nil) {
         #if os(macOS)
+        // Don't open settings window if dashboard window is open
+        if let appEnvironment = appEnvironment, appEnvironment.isDashboardWindowOpen {
+            return
+        }
+        
         if #available(macOS 14.0, *) {
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         } else {
@@ -67,9 +72,9 @@ struct PlatformActions {
 
 extension View {
     /// Adds a settings button that works across platforms
-    func settingsButton() -> some View {
+    func settingsButton(_ appEnvironment: AppEnvironment? = nil) -> some View {
         Button {
-            PlatformActions.openSettings()
+            PlatformActions.openSettings(appEnvironment)
         } label: {
             Image(systemName: "gear")
                 .font(.callout)

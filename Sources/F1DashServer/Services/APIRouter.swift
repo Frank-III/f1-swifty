@@ -13,6 +13,7 @@ public struct APIRouter: Sendable {
     
     private let logger = Logger(label: "APIRouter")
     private let scheduleCache = ScheduleCache()
+    private let standingsService = StandingsService()
     
     // MARK: - Public Interface
     
@@ -72,6 +73,21 @@ public struct APIRouter: Sendable {
                 request: request,
                 context: context,
                 sessionStateCache: sessionStateCache
+            )
+        }
+        
+        // Standings endpoints
+        router.get("/api/standings/drivers/:year") { request, context in
+            return try await apiRouter.getDriverStandings(
+                request: request,
+                context: context
+            )
+        }
+        
+        router.get("/api/standings/teams/:year") { request, context in
+            return try await apiRouter.getTeamStandings(
+                request: request,
+                context: context
             )
         }
     }
@@ -349,6 +365,130 @@ public struct APIRouter: Sendable {
             ),
             body: .init(byteBuffer: .init(data: data))
         )
+    }
+    
+    // MARK: - Standings Endpoints
+    
+    private func getDriverStandings(
+        request: Request,
+        context: some RequestContext
+    ) async throws -> Response {
+        
+        guard let yearString = context.parameters.get("year"),
+              let year = Int(yearString) else {
+            let errorResponse = ErrorResponse(
+                error: "Bad Request",
+                message: "Valid year parameter is required"
+            )
+            
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(errorResponse)
+            
+            return Response(
+                status: .badRequest,
+                headers: HTTPFields(dictionaryLiteral: (.contentType, "application/json")),
+                body: .init(byteBuffer: .init(data: data))
+            )
+        }
+        
+        do {
+            let standings = try await standingsService.getDriverStandings(year: year)
+            
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            
+            let data = try encoder.encode(standings)
+            
+            return Response(
+                status: .ok,
+                headers: HTTPFields(dictionaryLiteral:
+                    (.contentType, "application/json"),
+                    (.cacheControl, "public, max-age=3600"), // Cache for 1 hour
+                    (.accessControlAllowOrigin, "*"),
+                    (.accessControlAllowMethods, "GET, OPTIONS"),
+                    (.accessControlAllowHeaders, "Content-Type")
+                ),
+                body: .init(byteBuffer: .init(data: data))
+            )
+            
+        } catch {
+            logger.error("Failed to get driver standings for year \(year): \(error)")
+            
+            let errorResponse = ErrorResponse(
+                error: "Internal Server Error",
+                message: "Failed to fetch driver standings"
+            )
+            
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(errorResponse)
+            
+            return Response(
+                status: .internalServerError,
+                headers: HTTPFields(dictionaryLiteral: (.contentType, "application/json")),
+                body: .init(byteBuffer: .init(data: data))
+            )
+        }
+    }
+    
+    private func getTeamStandings(
+        request: Request,
+        context: some RequestContext
+    ) async throws -> Response {
+        
+        guard let yearString = context.parameters.get("year"),
+              let year = Int(yearString) else {
+            let errorResponse = ErrorResponse(
+                error: "Bad Request",
+                message: "Valid year parameter is required"
+            )
+            
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(errorResponse)
+            
+            return Response(
+                status: .badRequest,
+                headers: HTTPFields(dictionaryLiteral: (.contentType, "application/json")),
+                body: .init(byteBuffer: .init(data: data))
+            )
+        }
+        
+        do {
+            let standings = try await standingsService.getTeamStandings(year: year)
+            
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            
+            let data = try encoder.encode(standings)
+            
+            return Response(
+                status: .ok,
+                headers: HTTPFields(dictionaryLiteral:
+                    (.contentType, "application/json"),
+                    (.cacheControl, "public, max-age=3600"), // Cache for 1 hour
+                    (.accessControlAllowOrigin, "*"),
+                    (.accessControlAllowMethods, "GET, OPTIONS"),
+                    (.accessControlAllowHeaders, "Content-Type")
+                ),
+                body: .init(byteBuffer: .init(data: data))
+            )
+            
+        } catch {
+            logger.error("Failed to get team standings for year \(year): \(error)")
+            
+            let errorResponse = ErrorResponse(
+                error: "Internal Server Error",
+                message: "Failed to fetch team standings"
+            )
+            
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(errorResponse)
+            
+            return Response(
+                status: .internalServerError,
+                headers: HTTPFields(dictionaryLiteral: (.contentType, "application/json")),
+                body: .init(byteBuffer: .init(data: data))
+            )
+        }
     }
 }
 

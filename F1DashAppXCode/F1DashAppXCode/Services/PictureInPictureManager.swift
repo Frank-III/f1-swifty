@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Observation
+import F1DashModels
 
 @MainActor
 @Observable
@@ -36,7 +37,8 @@ public final class PictureInPictureManager {
     #endif
     
     /// Reference to the app environment (set during initialization)
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // MARK: - Public Methods
     
@@ -149,7 +151,9 @@ public final class PictureInPictureManager {
         window.hasShadow = true
         
         // Set content view with environment
-        let contentView = NSHostingView(rootView: TrackMapPiPContent(appEnvironment: appEnv)
+        // let contentView = NSHostingView(rootView: TrackMapPiPContent(appEnvironment: appEnv)
+        //     .environment(appEnv))
+        let contentView = NSHostingView(rootView: OptimizedTrackMapPiPContent(appEnvironment: appEnv)
             .environment(appEnv))
         window.contentView = contentView
         
@@ -159,140 +163,10 @@ public final class PictureInPictureManager {
     #endif
 }
 
-// MARK: - Simplified PiP Content View
-
+// MARK: - Original PiP Content View (kept for reference)
+/*
 struct TrackMapPiPContent: View {
-    let appEnvironment: AppEnvironment
-    @State private var viewModel: TrackMapViewModel
-    
-    init(appEnvironment: AppEnvironment) {
-        print("PiP: TrackMapPiPContent init with appEnvironment: \(appEnvironment)")
-        self.appEnvironment = appEnvironment
-        self._viewModel = State(wrappedValue: TrackMapViewModel(appEnvironment: appEnvironment))
-    }
-    
-    var body: some View {
-        ZStack {
-            // Background with glass effect
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-            
-            // Track map content
-            if viewModel.hasMapData {
-                GeometryReader { geometry in
-                    Canvas { context, size in
-                        // Draw simplified track
-                        drawSimplifiedTrack(in: context, size: size)
-                        
-                        // Draw driver positions with larger dots for visibility
-                        drawDriverPositions(in: context, size: size)
-                    }
-                    .padding(8)
-                }
-                
-                // Minimal overlay info
-                VStack {
-                    HStack {
-                        // Session status indicator
-                        if let trackStatus = appEnvironment.liveSessionState.trackStatus {
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(Color(hex: trackStatus.status.color) ?? .gray)
-                                    .frame(width: 8, height: 8)
-                                Text(trackStatus.status.displayName)
-                                    .font(.caption2)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(6)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                        }
-                        
-                        Spacer()
-                        
-                        // Close button for iOS (macOS has window controls)
-                        #if !os(macOS)
-                        Button {
-                            appEnvironment.pictureInPictureManager.deactivatePiP()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                        }
-                        #endif
-                    }
-                    .padding(8)
-                    
-                    Spacer()
-                }
-            } else {
-                ProgressView()
-                    .scaleEffect(0.8)
-            }
-        }
-    }
-    
-    private func drawSimplifiedTrack(in context: GraphicsContext, size: CGSize) {
-        
-        // Draw track with thicker line for better visibility
-        var path = Path()
-        let points = viewModel.getRotatedTrackPoints(for: size)
-        
-        if let first = points.first {
-            path.move(to: first)
-            for point in points.dropFirst() {
-                path.addLine(to: point)
-            }
-            path.closeSubpath()
-        }
-        
-        // Simple track rendering
-        context.stroke(
-            path,
-            with: .color(.secondary),
-            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
-        )
-    }
-    
-    private func drawDriverPositions(in context: GraphicsContext, size: CGSize) {
-        
-        let positions = viewModel.getDriverPositions(for: size)
-        
-        for position in positions where position.isOnTrack {
-            let dotSize: CGFloat = position.isFavorite ? 10 : 8
-            
-            let rect = CGRect(
-                x: position.point.x - dotSize/2,
-                y: position.point.y - dotSize/2,
-                width: dotSize,
-                height: dotSize
-            )
-            
-            // Draw driver dot
-            context.fill(
-                Circle().path(in: rect),
-                with: .color(position.color)
-            )
-            
-            // White border for visibility
-            context.stroke(
-                Circle().path(in: rect),
-                with: .color(.white),
-                lineWidth: 1
-            )
-            
-            // Show TLA only for favorite drivers in PiP mode
-            if position.isFavorite {
-                context.draw(
-                    Text(position.tla)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white),
-                    at: CGPoint(
-                        x: position.point.x,
-                        y: position.point.y + dotSize + 4
-                    )
-                )
-            }
-        }
-    }
+    // Original implementation preserved as comment
+    // This was replaced with OptimizedTrackMapPiPContent
 }
+*/

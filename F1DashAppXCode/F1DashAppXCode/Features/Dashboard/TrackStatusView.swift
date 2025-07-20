@@ -9,7 +9,8 @@ import SwiftUI
 import F1DashModels
 
 struct TrackStatusView: View {
-    @Environment(AppEnvironment.self) private var appEnvironment
+    // @Environment(AppEnvironment.self) private var appEnvironment
+    @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     
     private var trackStatus: TrackStatus? {
         appEnvironment.liveSessionState.trackStatus
@@ -48,8 +49,13 @@ struct TrackStatusView: View {
             return Color.platformBackground
         }
         
-        // Use the color from TrackFlag with opacity
-        return Color(hex: status.color) ?? Color.gray.opacity(0.1)
+        // Only use safety car colors if enabled
+        if appEnvironment.settingsStore.useSafetyCarColors {
+            // Use the color from TrackFlag with opacity
+            return (Color(hex: status.color) ?? Color.gray).opacity(0.1)
+        } else {
+            return Color.platformBackground
+        }
     }
 }
 

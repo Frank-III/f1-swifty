@@ -16,26 +16,27 @@ import CoreGraphics
 public final class VideoBasedPictureInPictureManager: NSObject {
     // MARK: - Properties
     
-    private var playerLayer: AVPlayerLayer?
-    private var player: AVQueuePlayer?
-    private var playerLooper: AVPlayerLooper?
+    private var sampleBufferDisplayLayer: AVSampleBufferDisplayLayer?
     private var pictureInPictureController: AVPictureInPictureController?
     
-    // Rendering
+    // Real-time rendering
     private var displayLink: CADisplayLink?
     private var renderer: ImageRenderer<AnyView>?
+    private var pixelBufferPool: CVPixelBufferPool?
     
-    weak var appEnvironment: AppEnvironment?
+    // weak var appEnvironment: AppEnvironment?
+    weak var appEnvironment: OptimizedAppEnvironment?
     
     // Track if PiP is active
     private(set) var isVideoPiPActive = false
     
+    // Track rendering state
+    private var isRendering = false
+    
     // Video properties
     private let videoSize = CGSize(width: 480, height: 360)
-    private let frameRate: Double = 30.0
-    
-    // Temporary video file
-    private var videoURL: URL?
+    private let frameRate: Double = 15.0 // Lower frame rate for better performance
+    private var frameCounter: Int64 = 0
     
     // MARK: - Initialization
     
@@ -66,128 +67,100 @@ public final class VideoBasedPictureInPictureManager: NSObject {
             return
         }
         
-        guard appEnvironment != nil else {
+        guard let appEnvironment = appEnvironment else {
             print("AppEnvironment not set")
             return
         }
         
-        // Create a video file with the track map
-        await createTrackMapVideo()
+        // Check if already active
+        if isVideoPiPActive || isRendering {
+            print("Video PiP already active or rendering")
+            return
+        }
         
-        // Setup player and PiP
-        setupVideoPlayer()
+        // Setup real-time video rendering
+        setupSampleBufferDisplayLayer()
+        setupRenderer(appEnvironment: appEnvironment)
+        startRealTimeRendering()
         #endif
     }
     
     func stopVideoPiP() {
         #if !os(macOS)
+        isRendering = false
         pictureInPictureController?.stopPictureInPicture()
-        cleanupVideoPlayer()
+        cleanupRealTimeRendering()
         #endif
     }
     
-    // MARK: - Video Creation
+    // MARK: - Real-time Setup
     
-    private func createTrackMapVideo() async {
+    private func setupSampleBufferDisplayLayer() {
         #if !os(macOS)
-        // Create a temporary video file
-        let tempDir = FileManager.default.temporaryDirectory
-        let videoPath = tempDir.appendingPathComponent("trackmap_\(Date().timeIntervalSince1970).mp4")
+        sampleBufferDisplayLayer = AVSampleBufferDisplayLayer()
+        sampleBufferDisplayLayer?.frame = CGRect(origin: .zero, size: videoSize)
+        sampleBufferDisplayLayer?.videoGravity = .resizeAspect
         
-        // Create video writer
-        guard let videoWriter = try? AVAssetWriter(outputURL: videoPath, fileType: .mp4) else {
-            print("Failed to create video writer")
-            return
-        }
-        
-        // Configure video settings
-        let videoSettings: [String: Any] = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: Int(videoSize.width),
-            AVVideoHeightKey: Int(videoSize.height),
-            AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: 2_000_000,
-                AVVideoProfileLevelKey: AVVideoProfileLevelH264High41,
-                AVVideoMaxKeyFrameIntervalKey: 60
-            ]
-        ]
-        
-        let videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
-        videoInput.expectsMediaDataInRealTime = false
-        
+        // Setup pixel buffer pool
         let pixelBufferAttributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
             kCVPixelBufferWidthKey as String: Int(videoSize.width),
-            kCVPixelBufferHeightKey as String: Int(videoSize.height)
+            kCVPixelBufferHeightKey as String: Int(videoSize.height),
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:]
         ]
         
-        let pixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(
-            assetWriterInput: videoInput,
-            sourcePixelBufferAttributes: pixelBufferAttributes
+        CVPixelBufferPoolCreate(
+            kCFAllocatorDefault,
+            nil,
+            pixelBufferAttributes as CFDictionary,
+            &pixelBufferPool
         )
         
-        videoWriter.add(videoInput)
-        
-        // Start writing
-        videoWriter.startWriting()
-        videoWriter.startSession(atSourceTime: .zero)
-        
-        // Create a simple animated video (10 seconds)
-        let duration = 10.0
-        let totalFrames = Int(duration * frameRate)
-        
-        // Setup renderer
-        guard let appEnvironment = appEnvironment else { return }
-        let trackMapView = TrackMapPiPContent(appEnvironment: appEnvironment)
-            .frame(width: videoSize.width, height: videoSize.height)
-            .background(Color.black)
-        
-        let renderer = ImageRenderer(content: AnyView(trackMapView))
-        renderer.scale = 2.0
-        
-        // Render frames
-        for frameIndex in 0..<totalFrames {
-            let presentationTime = CMTime(value: Int64(frameIndex), timescale: Int32(frameRate))
-            
-            // Wait for buffer to be ready
-            while !videoInput.isReadyForMoreMediaData {
-                await Task.yield()
-            }
-            
-            // Create pixel buffer
-            if let pixelBuffer = self.createPixelBuffer(from: renderer, at: frameIndex, totalFrames: totalFrames) {
-                pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-            }
+        // Setup PiP controller
+        if let layer = sampleBufferDisplayLayer {
+            pictureInPictureController = AVPictureInPictureController(contentSource: .init(sampleBufferDisplayLayer: layer, playbackDelegate: self))
+            pictureInPictureController?.delegate = self
         }
-        
-        // Finish writing
-        videoInput.markAsFinished()
-        await videoWriter.finishWriting()
-        
-        self.videoURL = videoPath
-        print("Video created at: \(videoPath)")
         #endif
     }
     
-    private func createPixelBuffer(from renderer: ImageRenderer<AnyView>, at frameIndex: Int, totalFrames: Int) -> CVPixelBuffer? {
+    private func setupRenderer(appEnvironment: OptimizedAppEnvironment) {
+        let trackMapView = OptimizedTrackMapPiPContent(appEnvironment: appEnvironment)
+            .frame(width: videoSize.width, height: videoSize.height)
+            .background(Color.black)
+        
+        renderer = ImageRenderer(content: AnyView(trackMapView))
+        renderer?.scale = 1.0
+    }
+    
+    private func startRealTimeRendering() {
         #if !os(macOS)
+        isRendering = true
+        displayLink = CADisplayLink(target: self, selector: #selector(renderFrame))
+        displayLink?.preferredFramesPerSecond = Int(frameRate)
+        displayLink?.add(to: .main, forMode: .common)
+        
+        // Start PiP after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self, self.isRendering else { return }
+            self.pictureInPictureController?.startPictureInPicture()
+        }
+        #endif
+    }
+    
+    @objc private func renderFrame() {
+        #if !os(macOS)
+        guard isRendering,
+              let sampleBufferDisplayLayer = sampleBufferDisplayLayer,
+              let pixelBufferPool = pixelBufferPool,
+              let renderer = renderer,
+              appEnvironment != nil else { return }
+        
         // Create pixel buffer
         var pixelBuffer: CVPixelBuffer?
-        let bufferAttributes: [String: Any] = [
-            kCVPixelBufferCGImageCompatibilityKey as String: true,
-            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
-        ]
+        CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pixelBufferPool, &pixelBuffer)
         
-        CVPixelBufferCreate(
-            kCFAllocatorDefault,
-            Int(videoSize.width),
-            Int(videoSize.height),
-            kCVPixelFormatType_32BGRA,
-            bufferAttributes as CFDictionary,
-            &pixelBuffer
-        )
-        
-        guard let buffer = pixelBuffer else { return nil }
+        guard let buffer = pixelBuffer else { return }
         
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
@@ -203,93 +176,84 @@ public final class VideoBasedPictureInPictureManager: NSObject {
             bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
             space: rgbColorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-        ) else { return nil }
+        ) else { return }
         
         // Clear background
         context.setFillColor(UIColor.black.cgColor)
         context.fill(CGRect(origin: .zero, size: videoSize))
         
-        // Render the SwiftUI view
-        if let cgImage = renderer.cgImage {
-            context.draw(cgImage, in: CGRect(origin: .zero, size: videoSize))
-        }
-        
-        // Add frame counter for testing
-        let progress = Double(frameIndex) / Double(totalFrames)
-        context.setFillColor(UIColor.white.cgColor)
-        context.setFont(CGFont("Helvetica" as CFString)!)
-        context.setFontSize(12)
-        
-        _ = "Frame: \(frameIndex) Progress: \(Int(progress * 100))%"
-        context.textPosition = CGPoint(x: 10, y: videoSize.height - 20)
-        // Note: Drawing text in CGContext is complex, skipping for now
-        
-        return buffer
-        #else
-        return nil
-        #endif
-    }
-    
-    // MARK: - Video Player Setup
-    
-    private func setupVideoPlayer() {
-        #if !os(macOS)
-        guard let videoURL = videoURL else {
-            print("No video URL available")
+        // Render the SwiftUI view with error handling
+        do {
+            if let cgImage = renderer.cgImage {
+                context.draw(cgImage, in: CGRect(origin: .zero, size: videoSize))
+            }
+        } catch {
+            print("Failed to render image: \(error)")
             return
         }
         
-        // Create player item
-        let playerItem = AVPlayerItem(url: videoURL)
+        // Create sample buffer
+        let presentationTime = CMTime(value: frameCounter, timescale: Int32(frameRate))
+        frameCounter += 1
         
-        // Create queue player for looping
-        let player = AVQueuePlayer(playerItem: playerItem)
-        player.isMuted = true
-        player.allowsExternalPlayback = false
+        var sampleBuffer: CMSampleBuffer?
+        var timingInfo = CMSampleTimingInfo()
+        timingInfo.duration = CMTime(value: 1, timescale: Int32(frameRate))
+        timingInfo.presentationTimeStamp = presentationTime
+        timingInfo.decodeTimeStamp = .invalid
         
-        // Create looper
-        self.playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
-        self.player = player
+        var formatDescription: CMVideoFormatDescription?
+        CMVideoFormatDescriptionCreateForImageBuffer(
+            allocator: kCFAllocatorDefault,
+            imageBuffer: buffer,
+            formatDescriptionOut: &formatDescription
+        )
         
-        // Create player layer
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.frame = CGRect(origin: .zero, size: videoSize)
-        playerLayer.videoGravity = .resizeAspect
-        self.playerLayer = playerLayer
+        guard let format = formatDescription else { return }
         
-        // Setup PiP controller
-        pictureInPictureController = AVPictureInPictureController(playerLayer: playerLayer)
-        pictureInPictureController?.delegate = self
+        CMSampleBufferCreateReadyWithImageBuffer(
+            allocator: kCFAllocatorDefault,
+            imageBuffer: buffer,
+            formatDescription: format,
+            sampleTiming: &timingInfo,
+            sampleBufferOut: &sampleBuffer
+        )
         
-        // Configure PiP
-        #if !os(macOS)
-        pictureInPictureController?.canStartPictureInPictureAutomaticallyFromInline = false
-        #endif
-        
-        // Start playback
-        player.play()
-        
-        // Start PiP after a short delay to ensure player is ready
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.pictureInPictureController?.startPictureInPicture()
+        if let sample = sampleBuffer {
+            sampleBufferDisplayLayer.enqueue(sample)
         }
         #endif
     }
     
-    private func cleanupVideoPlayer() {
+    private func cleanupRealTimeRendering() {
         #if !os(macOS)
-        player?.pause()
-        player = nil
-        playerLayer = nil
-        playerLooper = nil
+        isRendering = false
+        
+        displayLink?.invalidate()
+        displayLink = nil
+        
+        sampleBufferDisplayLayer?.flushAndRemoveImage()
+        sampleBufferDisplayLayer = nil
         pictureInPictureController = nil
         
-        // Clean up video file
-        if let videoURL = videoURL {
-            try? FileManager.default.removeItem(at: videoURL)
-            self.videoURL = nil
-        }
+        renderer = nil
+        pixelBufferPool = nil
+        frameCounter = 0
         #endif
+    }
+    
+    // MARK: - Force Cleanup
+    
+    func forceCleanup() {
+        // Stop PiP if active
+//        #if !os(macOS)
+//        if isVideoPiPActive {
+//              stopPictureInPicture()
+//          }
+//        #endif
+        
+        // Always cleanup resources
+        cleanupRealTimeRendering()
     }
 }
 
@@ -313,12 +277,44 @@ extension VideoBasedPictureInPictureManager: @preconcurrency AVPictureInPictureC
     public func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         print("Video PiP did stop")
         isVideoPiPActive = false
-        cleanupVideoPlayer()
+        cleanupRealTimeRendering()
     }
     
     public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         print("Video PiP failed to start: \(error)")
         isVideoPiPActive = false
+        cleanupRealTimeRendering()
+    }
+}
+
+// MARK: - AVPictureInPictureSampleBufferPlaybackDelegate
+
+extension VideoBasedPictureInPictureManager: @preconcurrency AVPictureInPictureSampleBufferPlaybackDelegate {
+    public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, setPlaying playing: Bool) {
+        // Handle play/pause state
+        if playing {
+            displayLink?.isPaused = false
+        } else {
+            displayLink?.isPaused = true
+        }
+    }
+    
+    public func pictureInPictureControllerTimeRangeForPlayback(_ pictureInPictureController: AVPictureInPictureController) -> CMTimeRange {
+        // Return a continuous time range
+        return CMTimeRange(start: .zero, duration: .positiveInfinity)
+    }
+    
+    public func pictureInPictureControllerIsPlaybackPaused(_ pictureInPictureController: AVPictureInPictureController) -> Bool {
+        return displayLink?.isPaused ?? false
+    }
+    
+    public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {
+        // Handle render size changes if needed
+    }
+    
+    public func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, skipByInterval skipInterval: CMTime, completion completionHandler: @escaping () -> Void) {
+        // Skip functionality not needed for live data
+        completionHandler()
     }
 }
 #endif
