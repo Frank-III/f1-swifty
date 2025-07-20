@@ -1,7 +1,6 @@
 .build/
 
 .DS_Store
-Package.resolved
 F1-Dash.app.backup
 .env
 .swiftpm
