@@ -15,7 +15,9 @@ import WeatherKit
 
 struct WindMapCard: View {
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    @Environment(PremiumStore.self) private var premiumStore
     @State private var showFullMap = false
+    @State private var showPaywall = false
     @State private var mapRegion = MKCoordinateRegion()
     #if canImport(WeatherKit)
     @State private var weatherData: Weather?
@@ -47,18 +49,26 @@ struct WindMapCard: View {
                     #endif
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 
-                // Expand button
-                Button {
-                    showFullMap = true
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
+                // Premium lock overlay if not subscribed
+                if !premiumStore.isPremiumUser {
+                    CompactPremiumLockOverlay {
+                        showPaywall = true
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else {
+                    // Expand button (only shown for premium users)
+                    Button {
+                        showFullMap = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding(8)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                    }
+                    .padding(8)
                 }
-                .padding(8)
             }
             .frame(height: 150)
             .overlay(
@@ -68,7 +78,9 @@ struct WindMapCard: View {
         }
         .onAppear {
             setupMapRegion()
-            loadWeatherData()
+            if premiumStore.isPremiumUser {
+                loadWeatherData()
+            }
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $showFullMap) {
@@ -77,6 +89,9 @@ struct WindMapCard: View {
                 circuitName: appEnvironment.liveSessionState.sessionInfo?.meeting?.name ?? "Circuit"
             )
         }
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallMarqueeView()
+        }
         #else
         .sheet(isPresented: $showFullMap) {
             ExpandedWeatherMapView(
@@ -84,6 +99,10 @@ struct WindMapCard: View {
                 circuitName: appEnvironment.liveSessionState.sessionInfo?.meeting?.name ?? "Circuit"
             )
             .frame(minWidth: 800, minHeight: 600)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallMarqueeView()
+                .frame(width: 800, height: 600)
         }
         #endif
     }
@@ -189,6 +208,7 @@ struct ExpandedWeatherMapView: View {
     let location: CLLocationCoordinate2D?
     let circuitName: String
     @Environment(\.dismiss) private var dismiss
+    @Environment(PremiumStore.self) private var premiumStore
     
     @State private var selectedOverlay: WeatherOverlay = .wind
     @State private var mapRegion = MKCoordinateRegion()
@@ -985,4 +1005,5 @@ struct RainDropShape: Shape {
         .frame(height: 150)
         .padding()
         .environment(OptimizedAppEnvironment())
+        .environment(PremiumStore())
 }

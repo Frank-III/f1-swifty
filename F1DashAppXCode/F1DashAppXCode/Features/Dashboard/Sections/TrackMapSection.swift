@@ -11,6 +11,7 @@ struct TrackMapSection: View {
     // @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
     @Binding var showTrackMapFullScreen: Bool
+    @State private var showUniversalOverlayPiP: Bool = false
     
     var body: some View {
         VStack(spacing: 12) {
@@ -22,11 +23,33 @@ struct TrackMapSection: View {
                 
                 if appEnvironment.connectionStatus == .connected {
                     #if os(iOS) || os(iPadOS)
-                    // Picture in Picture button
+                    // Universal Overlay PiP button (NEW - smooth floating)
                     Button {
-                        // Stop video PiP if active before starting regular PiP
+                        // Stop other PiP modes if active
                         if appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive {
                             appEnvironment.videoBasedPictureInPictureManager.stopVideoPiP()
+                        }
+                        if appEnvironment.pictureInPictureManager.isPiPActive {
+                            appEnvironment.pictureInPictureManager.deactivatePiP()
+                        }
+                        showUniversalOverlayPiP.toggle()
+                    } label: {
+                        Image(systemName: showUniversalOverlayPiP ? "rectangle.inset.filled" : "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
+                    .universalOverlay(show: $showUniversalOverlayPiP) {
+                        FloatingTrackMapView(show: $showUniversalOverlayPiP)
+                    }
+                    
+                    // Legacy Picture in Picture button
+                    Button {
+                        // Stop other PiP modes if active
+                        if appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive {
+                            appEnvironment.videoBasedPictureInPictureManager.stopVideoPiP()
+                        }
+                        if showUniversalOverlayPiP {
+                            showUniversalOverlayPiP = false
                         }
                         appEnvironment.pictureInPictureManager.togglePiP()
                     } label: {
@@ -34,7 +57,7 @@ struct TrackMapSection: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PlatformGlassButtonStyle())
-                    .disabled(appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive)
+                    .disabled(appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive || showUniversalOverlayPiP)
                     
                     // Video-based PiP button (for background support)
                     Button {
@@ -42,9 +65,12 @@ struct TrackMapSection: View {
                             if appEnvironment.videoBasedPictureInPictureManager.isVideoPiPActive {
                                 appEnvironment.videoBasedPictureInPictureManager.stopVideoPiP()
                             } else {
-                                // Stop regular PiP if active before starting video PiP
+                                // Stop other PiP modes if active
                                 if appEnvironment.pictureInPictureManager.isPiPActive {
                                     appEnvironment.pictureInPictureManager.deactivatePiP()
+                                }
+                                if showUniversalOverlayPiP {
+                                    showUniversalOverlayPiP = false
                                 }
                                 await appEnvironment.videoBasedPictureInPictureManager.startVideoPiP()
                             }
@@ -54,7 +80,7 @@ struct TrackMapSection: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PlatformGlassButtonStyle())
-                    .disabled(appEnvironment.pictureInPictureManager.isPiPActive)
+                    .disabled(appEnvironment.pictureInPictureManager.isPiPActive || showUniversalOverlayPiP)
                     #endif
                     
                     // Full screen button

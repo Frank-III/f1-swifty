@@ -15,8 +15,10 @@ import Sharing
 public struct DashboardSettingsView: View {
     public init() {}
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    @Environment(PremiumStore.self) private var premiumStore
     @State private var customDelay: String = ""
     @State private var showCustomInput: Bool = false
+    @State private var showPaywall = false
     
     private var isCustomDelayActive: Bool {
         let currentDelay = appEnvironment.settingsStore.dataDelay
@@ -40,6 +42,58 @@ public struct DashboardSettingsView: View {
     public var body: some View {
         NavigationStack {
             Form {
+                // Premium Section
+                Section {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        HStack(spacing: 16) {
+                            // Premium icon
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.yellow, Color.orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 36, height: 36)
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundStyle(.white)
+                            }
+                            
+                            // Text content
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(premiumStore.isPremiumUser ? "F1 Dash Premium" : "Get F1 Dash Premium")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                
+                                if premiumStore.isPremiumUser {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                        Text("Active Subscription")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    Text("Unlock advanced weather maps and forecasts")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
+                }
+                
                 // General Settings Section
                 Section("General") {
                     #if os(macOS)
@@ -250,6 +304,10 @@ public struct DashboardSettingsView: View {
             .formStyle(.grouped)
             #endif
             .platformNavigationGlass()
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallMarqueeView()
+                .frame(width: 800, height: 600)
         }
     }
     

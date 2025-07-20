@@ -16,9 +16,11 @@ public struct SettingsView: View {
     public init() {}
     // @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    @Environment(PremiumStore.self) private var premiumStore
     #if os(macOS)
     @State private var selectedTab = 0
     #endif
+    @State private var showPaywall = false
     
     public var body: some View {
         #if os(macOS)
@@ -47,6 +49,63 @@ public struct SettingsView: View {
         #else
         NavigationStack {
             Form {
+                // Premium Section
+                Section {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        HStack(spacing: 16) {
+                            // Premium icon
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.yellow, Color.orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundStyle(.white)
+                            }
+                            
+                            // Text content
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(premiumStore.isPremiumUser ? "F1 Dash Premium" : "Get F1 Dash Premium")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                
+                                if premiumStore.isPremiumUser {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                        Text("Active")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    Text("Unlock advanced weather maps")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            // Chevron
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(PlatformGlassButtonStyle())
+                }
+                
                 // General Settings Section
                 Section("General") {
                     Toggle("Show Notifications", isOn: Binding(
@@ -106,6 +165,9 @@ public struct SettingsView: View {
             .navigationTitle("Settings")
             #endif
         }
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallMarqueeView()
+        }
         #endif
     }
     
@@ -135,9 +197,63 @@ public struct SettingsView: View {
 struct GeneralSettingsView: View {
     // @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
+    @Environment(PremiumStore.self) private var premiumStore
+    @State private var showPaywall = false
     
     var body: some View {
         Form {
+            // Premium Section
+            Section {
+                Button {
+                    showPaywall = true
+                } label: {
+                    HStack(spacing: 16) {
+                        // Premium icon
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.yellow, Color.orange],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 36, height: 36)
+                            
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        // Text content
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(premiumStore.isPremiumUser ? "F1 Dash Premium" : "Get F1 Dash Premium")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            
+                            if premiumStore.isPremiumUser {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.green)
+                                    Text("Active Subscription")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else {
+                                Text("Unlock advanced weather maps and forecasts")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(PlatformGlassButtonStyle())
+            }
+            
             Section {
                 #if os(macOS)
                 Toggle("Launch at Login", isOn: Binding(
@@ -181,6 +297,10 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .sheet(isPresented: $showPaywall) {
+            PaywallMarqueeView()
+                .frame(width: 800, height: 600)
+        }
     }
     
     #if os(macOS)
@@ -686,5 +806,6 @@ struct iOSRaceControlSettingsContent: View {
 
 #Preview {
     SettingsView()
-        .environment(AppEnvironment())
+        .environment(OptimizedAppEnvironment())
+        .environment(PremiumStore())
 }

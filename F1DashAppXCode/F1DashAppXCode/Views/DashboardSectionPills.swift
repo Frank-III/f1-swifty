@@ -14,7 +14,7 @@ import F1DashModels
 struct DashboardSectionPills: View {
 //    @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(OptimizedAppEnvironment.self) private var appEnvironment
-  @Environment(\.tabViewBottomAccessoryPlacement) var placement
+    @Environment(\.tabViewBottomAccessoryPlacement) var placement
     @Binding var selectedSection: DashboardSection
     @Binding var showTrackMapFullScreen: Bool
     @State private var pulseAnimation = false

@@ -65,6 +65,15 @@ final class SettingsStore {
     @ObservationIgnored
     @Shared(.appStorage("playRaceControlChime")) var playRaceControlChime = true
     
+    // MARK: - Premium Settings (Managed by PremiumStore)
+    
+    // Helper property to easily check premium status from SettingsStore
+    var isPremiumUser: Bool {
+        // This will be synced with PremiumStore via swift-sharing
+        @Shared(.appStorage("isPremiumUser")) var premium = false
+        return premium
+    }
+    
     // MARK: - Computed Properties
     
     var favoriteDriverIDs: Set<String> {

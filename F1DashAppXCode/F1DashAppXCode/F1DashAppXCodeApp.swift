@@ -9,6 +9,7 @@ import SwiftUI
 #if canImport(AppKit)
 import AppKit
 #endif
+import RevenueCat
 
 // TEST MODE - Simple isolated track map test
 //@main
@@ -74,7 +75,24 @@ struct F1DashAppXCodeApp: App {
     #endif
     // @State private var appEnvironment = AppEnvironment()
     @State private var appEnvironment = OptimizedAppEnvironment()
+    @State private var premiumStore = PremiumStore()
     
+    init() {
+        // Configure RevenueCat
+        #if DEBUG
+        Purchases.logLevel = .debug
+        #endif
+        
+        // TODO: Replace with your actual RevenueCat API key
+        // Get it from https://app.revenuecat.com
+        let apiKey = "appl_SleKyNbPDNXlbVAbKnexDeCOGlz"
+        
+        if apiKey != "YOUR_REVENUECAT_API_KEY" {
+            Purchases.configure(withAPIKey: apiKey)
+        } else {
+            print("⚠️ RevenueCat API key not configured - purchases will not work!")
+        }
+    }
     
     var body: some Scene {
         #if os(macOS)
@@ -82,12 +100,14 @@ struct F1DashAppXCodeApp: App {
         Settings {
             SettingsView()
                 .environment(appEnvironment)
+                .environment(premiumStore)
         }
         
         // Main window scene (hidden by default)
         WindowGroup("F1 Dashboard", id: "dashboard") {
            MainTabView()
                .environment(appEnvironment)
+               .environment(premiumStore)
 //          TestStateUpdateView()
         }
         .windowStyle(.hiddenTitleBar)
@@ -102,18 +122,23 @@ struct F1DashAppXCodeApp: App {
         MenuBarExtra("F1 Dash", systemImage: "flag.checkered.circle.fill") {
             SimplePopoverView()
                 .environment(appEnvironment)
+                .environment(premiumStore)
                 .onAppear {
                     // Set the app environment in the delegate when the menu bar extra appears
                     AppDelegate.shared = appDelegate
                     appDelegate.setAppEnvironment(appEnvironment)
+                    appDelegate.premiumStore = premiumStore
                 }
         }
         .menuBarExtraStyle(.window)
         #else
         // iOS/iPadOS main window
         WindowGroup {
-          MainTabView()
-              .environment(appEnvironment)
+            RootView {
+                MainTabView()
+                    .environment(appEnvironment)
+                    .environment(premiumStore)
+            }
         }
         #endif
     }
@@ -148,6 +173,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover?
     // var appEnvironment: AppEnvironment?
     var appEnvironment: OptimizedAppEnvironment?
+    var premiumStore: PremiumStore?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide dock icon for menu bar app
@@ -231,6 +257,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if let env = appEnvironment {
                     let dashboardView = MainTabView()
                         .environment(env)
+                        .environment(premiumStore ?? PremiumStore())
                     
                     let hostingController = NSHostingController(rootView: dashboardView)
                     let window = NSWindow(contentViewController: hostingController)

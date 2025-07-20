@@ -15,13 +15,26 @@ struct LiveTimingSection: View {
     private let horizontalPadding: CGFloat = 16 // Match the row padding
     let shouldExpand : Bool
     
+    private var titleFontSize: CGFloat {
+        #if os(macOS)
+        return 20
+        #elseif os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 22
+        } else {
+            return 18
+        }
+        #else
+        return 18
+        #endif
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header with padding
             HStack {
                 Text("Live Timing")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.system(size: titleFontSize, weight: .semibold, design: .default))
                 Spacer()
             }
             .padding()

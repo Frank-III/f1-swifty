@@ -1,0 +1,153 @@
+{
+  "appPolicies" : {
+
+  },
+  "identifier" : "F1DashProducts",
+  "nonRenewableSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : true,
+      "internalID" : "F1DASH_LIFETIME",
+      "localizations" : [
+        {
+          "description" : "Get lifetime access to all premium features",
+          "displayName" : "F1 Dash Premium - Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.f1dash.premium.lifetime",
+      "referenceName" : "Premium Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "YOUR_APP_ID",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 737853600,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "F1DASH_PREMIUM",
+      "localizations" : [
+        {
+          "locale" : "en_US",
+          "name" : "F1 Dash Premium"
+        }
+      ],
+      "name" : "F1 Dash Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "F1DASH_MONTHLY",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Monthly subscription to F1 Dash Premium features",
+              "displayName" : "F1 Dash Premium - Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.f1dash.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly",
+          "subscriptionGroupID" : "F1DASH_PREMIUM",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "F1DASH_ANNUAL",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Annual subscription to F1 Dash Premium features - Save 25%!",
+              "displayName" : "F1 Dash Premium - Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.f1dash.premium.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Annual",
+          "subscriptionGroupID" : "F1DASH_PREMIUM",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "subscriptionOffersKeyPair" : {
+    "privateKey" : "",
+    "publicKey" : ""
+  },
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
